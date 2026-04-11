@@ -1,9 +1,11 @@
+from unittest.mock import patch
+
 import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.aegisbot.api import AegisBotApiClientError
-from custom_components.aegisbot.const import CONF_API_KEY, CONF_URL
+from custom_components.aegisbot.const import CONF_API_KEY, CONF_URL, DOMAIN
 from custom_components.aegisbot.coordinator import AegisBotDataCoordinator
 
 

@@ -2,7 +2,7 @@
 
 import os
 import sys
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -20,7 +20,9 @@ def auto_enable_custom_integrations(hass):
 @pytest.fixture
 def mock_api():
     """Mock the AegisBot API client."""
-    with patch("custom_components.aegisbot.api.AegisBotApiClient", autospec=True) as mock:
+    with patch(
+        "custom_components.aegisbot.api.AegisBotApiClient", autospec=True
+    ) as mock:
         client = mock.return_value
         client.async_get_data = AsyncMock()
         client.async_get_all_locks = AsyncMock()

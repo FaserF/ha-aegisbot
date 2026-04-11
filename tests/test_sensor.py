@@ -2,7 +2,6 @@
 
 from unittest.mock import patch
 
-import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.aegisbot.const import DOMAIN

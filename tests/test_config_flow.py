@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 from homeassistant import data_entry_flow
 from homeassistant.const import CONF_URL
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.aegisbot.config_flow import CannotConnect, InvalidAuth
 from custom_components.aegisbot.const import CONF_API_KEY, DOMAIN
