@@ -178,5 +178,7 @@ ruff_errors.json
 *result*.txt
 /dummy_ha
 *.txt
+!requirements_test.txt
+!requirements.txt
 *output*.json
 test_live.py

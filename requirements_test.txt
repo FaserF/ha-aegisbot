@@ -1,0 +1,7 @@
+# Test requirements for AegisBot integration
+pytest-homeassistant-custom-component
+pytest-asyncio
+pytest-cov
+respx
+async_timeout
+aiohttp
