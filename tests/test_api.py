@@ -11,10 +11,11 @@ from custom_components.aegisbot.api import (
 )
 
 
-async def test_api_get_data(hass, respx_mock):
+async def test_api_get_data(hass, aioclient_mock):
     """Test get_data."""
-    respx_mock.get("http://example.com/api/v1/health").respond(
-        json={"status": "healthy"}
+    aioclient_mock.get(
+        "http://example.com/api/v1/health",
+        json={"status": "healthy"},
     )
     api = AegisBotApiClient(
         "http://example.com", "api_key", async_get_clientsession(hass)
@@ -23,9 +24,9 @@ async def test_api_get_data(hass, respx_mock):
     assert response == {"status": "healthy"}
 
 
-async def test_api_auth_error(hass, respx_mock):
+async def test_api_auth_error(hass, aioclient_mock):
     """Test auth error."""
-    respx_mock.get("http://example.com/api/v1/health").respond(status=401)
+    aioclient_mock.get("http://example.com/api/v1/health", status=401)
     api = AegisBotApiClient(
         "http://example.com", "api_key", async_get_clientsession(hass)
     )
@@ -33,9 +34,10 @@ async def test_api_auth_error(hass, respx_mock):
         await api.async_get_data()
 
 
-async def test_api_comm_error(hass, respx_mock):
+async def test_api_comm_error(hass, aioclient_mock):
     """Test communication error."""
-    respx_mock.get("http://example.com/api/v1/health").side_effect = aiohttp.ClientError
+    # To simulate a communication error with aioclient_mock, we use exc
+    aioclient_mock.get("http://example.com/api/v1/health", exc=aiohttp.ClientError)
     api = AegisBotApiClient(
         "http://example.com", "api_key", async_get_clientsession(hass)
     )
@@ -43,22 +45,24 @@ async def test_api_comm_error(hass, respx_mock):
         await api.async_get_data()
 
 
-async def test_api_get_stats(hass, respx_mock):
+async def test_api_get_stats(hass, aioclient_mock):
     """Test get_stats."""
-    respx_mock.get("http://example.com/api/v1/stats").respond(
-        json={"data": {"protected_groups": 10}}
+    aioclient_mock.get(
+        "http://example.com/api/v1/stats",
+        json={"data": {"protected_groups": 10}},
     )
     api = AegisBotApiClient(
         "http://example.com", "api_key", async_get_clientsession(hass)
     )
     response = await api.async_get_stats()
-    assert response == {"data": {"protected_groups": 5}}
+    assert response == {"data": {"protected_groups": 10}}
 
 
-async def test_api_get_all_locks(hass, respx_mock):
+async def test_api_get_all_locks(hass, aioclient_mock):
     """Test get_all_locks."""
-    respx_mock.get("http://example.com/api/v1/locks/overview").respond(
-        json={"data": [{"group_id": 1, "locks": []}]}
+    aioclient_mock.get(
+        "http://example.com/api/v1/locks/overview",
+        json={"data": [{"group_id": 1, "locks": []}]},
     )
     api = AegisBotApiClient(
         "http://example.com", "api_key", async_get_clientsession(hass)
