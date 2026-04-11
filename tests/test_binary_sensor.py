@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.aegisbot.const import DOMAIN
 
@@ -26,7 +27,7 @@ async def test_binary_sensors(hass, mock_api):
             "data": {"stats": {"active_raids": 0}}
         }
 
-        entry = pytest.MockConfigEntry(
+        entry = MockConfigEntry(
             domain=DOMAIN,
             data={"url": "http://example.com", "api_key": "api_key"},
             entry_id="test_entry",

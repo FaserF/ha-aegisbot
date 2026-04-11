@@ -181,5 +181,5 @@ class AegisBotApiClient:
             ) from exception
         except Exception as exception:  # pylint: disable=broad-except
             raise AegisBotApiClientError(
-                "Something really wrong happened!"
+                f"Unexpected error: {exception}"
             ) from exception

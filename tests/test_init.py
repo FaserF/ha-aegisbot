@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.aegisbot.const import DOMAIN
 
@@ -19,7 +20,7 @@ async def test_setup_unload_entry(hass, mock_api):
         mock_api.async_get_all_locks.return_value = []
         mock_api.async_get_security_intel.return_value = {"data": {"stats": {}}}
 
-        entry = pytest.MockConfigEntry(
+        entry = MockConfigEntry(
             domain=DOMAIN,
             data={"url": "http://example.com", "api_key": "api_key"},
             entry_id="test_entry",
@@ -50,7 +51,7 @@ async def test_services_registration(hass, mock_api):
         mock_api.async_get_all_locks.return_value = []
         mock_api.async_get_security_intel.return_value = {"data": {"stats": {}}}
 
-        entry = pytest.MockConfigEntry(
+        entry = MockConfigEntry(
             domain=DOMAIN,
             data={"url": "http://example.com", "api_key": "api_key"},
             entry_id="test_entry",
