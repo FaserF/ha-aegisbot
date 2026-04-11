@@ -5,7 +5,7 @@
 [![hacs](https://img.shields.io/badge/HACS-custom-orange.svg?style=flat-square)](https://hacs.xyz)
 [![CI Orchestrator](https://github.com/FaserF/ha-aegisbot/actions/workflows/ci-orchestrator.yml/badge.svg)](https://github.com/FaserF/ha-aegisbot/actions/workflows/ci-orchestrator.yml)
 
-A professional, modern Home Assistant integration for **AegisBot** — the advanced Telegram (and Messenger) group defender. Monitor group health, track moderation stats, and manage security protocols directly from your Home Assistant dashboard.
+A professional, modern Home Assistant integration for [**AegisBot**](https://github.com/FaserF/AegisBot) — the advanced Telegram (and Messenger) group defender. Monitor group health, track moderation stats, and manage security protocols directly from your Home Assistant dashboard.
 
 ## 🧭 Quick Links
 
@@ -36,6 +36,9 @@ AegisBot is a powerful orchestrator for group management. This integration allow
   - **Diagnostics**: Full support for Home Assistant diagnostic exports to help with troubleshooting.
 
 ## 📦 Installation
+
+> [!TIP]
+> This integration requires an active AegisBot instance. You can easily deploy AegisBot as a **Home Assistant App** (formerly Addon) using my [hassio-addons repository](https://github.com/FaserF/hassio-addons).
 
 ### HACS (Recommended)
 

@@ -1,4 +1,5 @@
 {
-  "name": "aegisbot",
-  "render_readme": true
+  "name": "AegisBot",
+  "render_readme": true,
+  "country": "DE"
 }
