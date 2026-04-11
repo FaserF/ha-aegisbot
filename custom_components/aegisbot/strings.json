@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to AegisBot",
+        "description": "Enter your AegisBot instance URL and a secure API token.",
+        "data": {
+          "url": "Instance URL",
+          "api_key": "API Key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to AegisBot. Check URL and connectivity.",
+      "invalid_auth": "Invalid API Key. Please verify your credentials.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This AegisBot instance is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "protected_groups": { "name": "Protected Groups" },
+      "active_warnings": { "name": "Active Warnings" },
+      "malicious_links": { "name": "Malicious Links Blocked" },
+      "ai_faq_count": { "name": "AI FAQ Requests" }
+    },
+    "switch": {
+      "lock_media": { "name": "Lock Media" },
+      "lock_links": { "name": "Lock Links" },
+      "lock_rtl": { "name": "Lock RTL" },
+      "lock_stickers": { "name": "Lock Stickers" },
+      "lock_gifs": { "name": "Lock GIFs" },
+      "lock_documents": { "name": "Lock Documents" },
+      "lock_voice": { "name": "Lock Voice" },
+      "lock_video_notes": { "name": "Lock Video Notes" },
+      "lock_contacts": { "name": "Lock Contacts" },
+      "lock_location": { "name": "Lock Location" },
+      "lock_games": { "name": "Lock Games" },
+      "lock_polls": { "name": "Lock Polls" },
+      "lock_inline": { "name": "Lock Inline" },
+      "lock_buttons": { "name": "Lock Buttons" },
+      "lock_forwards": { "name": "Lock Forwards" },
+      "lock_commands": { "name": "Lock Commands" },
+      "lock_emails": { "name": "Lock Emails" },
+      "lock_usernames": { "name": "Lock Usernames" },
+      "lock_markdown": { "name": "Lock Markdown" }
+    },
+    "button": {
+      "sync_filters": { "name": "Sync Global Filters" }
+    }
+  }
+}

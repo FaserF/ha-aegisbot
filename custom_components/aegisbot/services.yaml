@@ -1,0 +1,136 @@
+send_message:
+  description: Send a message to a Telegram group via AegisBot.
+  fields:
+    group_id:
+      description: The numerical ID of the Telegram group.
+      example: -100123456789
+      required: true
+      selector:
+        number:
+          mode: box
+          min: -999999999999999
+          max: 999999999999999
+    text:
+      description: The message text to send.
+      example: "Alert: Security breach detected!"
+      required: true
+      selector:
+        text:
+    message_thread_id:
+      description: The ID of the message thread (topic) to send to.
+      example: 12
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 999999999
+
+ban_user:
+  description: Ban a user from a Telegram group.
+  fields:
+    group_id:
+      description: The ID of the group.
+      example: -100123456789
+      required: true
+      selector:
+        number:
+          min: -999999999999999
+          max: 999999999999999
+    user_id:
+      description: The ID of the user to ban.
+      example: 12345678
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 999999999999
+    duration:
+      description: Optional duration for a temporary ban (e.g. 1h, 1d). If omitted, the ban is permanent.
+      example: "12h"
+      required: false
+      selector:
+        text:
+    reason:
+      description: The reason for the ban.
+      example: "Spam detected by HA"
+      required: false
+      selector:
+        text:
+
+unban_user:
+  description: Unban a user from a Telegram group.
+  fields:
+    group_id:
+      description: The ID of the group.
+      example: -100123456789
+      required: true
+      selector:
+        number:
+          min: -999999999999999
+          max: 999999999999999
+    user_id:
+      description: The ID of the user to unban.
+      example: 12345678
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 999999999999
+
+mute_user:
+  description: Mute a user in a Telegram group.
+  fields:
+    group_id:
+      description: The ID of the group.
+      example: -100123456789
+      required: true
+      selector:
+        number:
+          min: -999999999999999
+          max: 999999999999999
+    user_id:
+      description: The ID of the user to mute.
+      example: 12345678
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 999999999999
+    duration:
+      description: Duration of the mute (e.g. 1h, 1d).
+      example: "2h"
+      required: true
+      selector:
+        text:
+    reason:
+      description: The reason for the mute.
+      example: "Excessive messages"
+      required: false
+      selector:
+        text:
+
+warn_user:
+  description: Issue a warning to a user in a Telegram group.
+  fields:
+    group_id:
+      description: The ID of the group.
+      example: -100123456789
+      required: true
+      selector:
+        number:
+          min: -999999999999999
+          max: 999999999999999
+    user_id:
+      description: The ID of the user to warn.
+      example: 12345678
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 999999999999
+    reason:
+      description: The reason for the warning.
+      example: "Inappropriate language"
+      required: true
+      selector:
+        text:

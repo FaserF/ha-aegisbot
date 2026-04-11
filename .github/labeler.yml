@@ -1,0 +1,17 @@
+enhancement:
+  - head-branch: ['^feat/', '^feature/']
+
+bug:
+  - head-branch: ['^fix/', '^bugfix/']
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.md', 'docs/**']
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file: ['.github/**']
+
+tests:
+  - changed-files:
+    - any-glob-to-any-file: ['tests/**']
