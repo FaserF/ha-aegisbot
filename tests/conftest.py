@@ -1,4 +1,5 @@
 """Fixtures for AegisBot tests."""
+
 import os
 import sys
 from unittest.mock import patch
