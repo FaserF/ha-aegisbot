@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -32,7 +32,7 @@ class AegisBotSyncButton(CoordinatorEntity[AegisBotDataCoordinator], ButtonEntit
             identifiers={(DOMAIN, entry.entry_id)},
             name="AegisBot System",
             manufacturer="AegisBot",
-            entry_type="service",
+            entry_type=DeviceEntryType.SERVICE,
         )
 
     async def async_press(self) -> None:

@@ -13,7 +13,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -49,7 +49,7 @@ class AegisBotSensorEntity(CoordinatorEntity[AegisBotDataCoordinator], SensorEnt
             identifiers={(DOMAIN, entry.entry_id)},
             name="AegisBot System",
             manufacturer="AegisBot",
-            entry_type="service",
+            entry_type=DeviceEntryType.SERVICE,
         )
 
     @property

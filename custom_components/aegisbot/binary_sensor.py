@@ -14,7 +14,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -51,7 +51,7 @@ class AegisBotBinarySensorEntity(
             identifiers={(DOMAIN, entry.entry_id)},
             name="AegisBot System",
             manufacturer="AegisBot",
-            entry_type="service",
+            entry_type=DeviceEntryType.SERVICE,
         )
 
     @property

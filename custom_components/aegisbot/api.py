@@ -39,33 +39,31 @@ class AegisBotApiClient:
         """Get data from the API."""
         return await self._api_wrapper(method="get", url=f"{self._url}/api/v1/health")
 
-    async def async_get_all_locks(self) -> list[dict]:
-        """Get all group locks."""
-        return await self._api_wrapper(
-            method="get", url=f"{self._url}/api/v1/admin/groups/locks"
-        )
-
-    async def async_get_security_intel(self) -> dict:
-        """Get global security intelligence (threat map)."""
-        return await self._api_wrapper(
-            method="get", url=f"{self._url}/api/v1/admin/groups/security/threat-map"
-        )
-
-    async def async_get_group_health(self) -> list:
-        """Get health info for all groups."""
-        response = await self._api_wrapper(
-            method="get", url=f"{self._url}/api/v1/stats/analytics/group-health"
-        )
-        return response.get("data", [])
-
-    async def async_get_all_locks(self) -> list:
+    async def async_get_all_locks(self) -> list[dict[str, Any]]:
         """Get all locks for all groups."""
         response = await self._api_wrapper(
             method="get", url=f"{self._url}/api/v1/locks/overview"
         )
         return response.get("data", [])
 
-    async def async_get_locks(self, group_id: int) -> list:
+    async def async_get_security_intel(self) -> dict[str, Any]:
+        """Get global security intelligence (threat map)."""
+        return await self._api_wrapper(
+            method="get", url=f"{self._url}/api/v1/admin/groups/security/threat-map"
+        )
+
+    async def async_get_group_health(self) -> list[dict[str, Any]]:
+        """Get health info for all groups."""
+        response = await self._api_wrapper(
+            method="get", url=f"{self._url}/api/v1/stats/analytics/group-health"
+        )
+        return response.get("data", [])
+
+    async def async_get_stats(self) -> dict[str, Any]:
+        """Get global statistics."""
+        return await self._api_wrapper(method="get", url=f"{self._url}/api/v1/stats")
+
+    async def async_get_locks(self, group_id: int) -> list[dict[str, Any]]:
         """Get locks for a group."""
         response = await self._api_wrapper(
             method="get", url=f"{self._url}/api/v1/locks/{group_id}"
@@ -104,9 +102,9 @@ class AegisBotApiClient:
         user_id: int,
         duration: str | None = None,
         reason: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Ban a user from a group."""
-        data = {"user_id": user_id}
+        data: dict[str, Any] = {"user_id": user_id}
         if duration:
             data["duration"] = duration
         if reason:
@@ -127,9 +125,9 @@ class AegisBotApiClient:
 
     async def async_mute_user(
         self, group_id: int, user_id: int, duration: str, reason: str | None = None
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Mute a user in a group."""
-        data = {"user_id": user_id, "duration": duration}
+        data: dict[str, Any] = {"user_id": user_id, "duration": duration}
         if reason:
             data["reason"] = reason
         return await self._api_wrapper(

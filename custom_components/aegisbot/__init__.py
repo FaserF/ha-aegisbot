@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 
 from .const import DOMAIN
 from .coordinator import AegisBotDataCoordinator
@@ -28,14 +26,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Register Services
-    async def handle_send_message(call) -> None:
+    async def handle_send_message(call: ServiceCall) -> None:
         """Handle the send_message service call."""
         group_id = call.data["group_id"]
         text = call.data["text"]
         thread_id = call.data.get("message_thread_id")
         await coordinator.api.async_send_message(group_id, text, thread_id)
 
-    async def handle_ban_user(call) -> None:
+    async def handle_ban_user(call: ServiceCall) -> None:
         """Handle the ban_user service call."""
         group_id = call.data["group_id"]
         user_id = call.data["user_id"]
@@ -43,13 +41,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         reason = call.data.get("reason")
         await coordinator.api.async_ban_user(group_id, user_id, duration, reason)
 
-    async def handle_unban_user(call) -> None:
+    async def handle_unban_user(call: ServiceCall) -> None:
         """Handle the unban_user service call."""
         group_id = call.data["group_id"]
         user_id = call.data["user_id"]
         await coordinator.api.async_unban_user(group_id, user_id)
 
-    async def handle_mute_user(call) -> None:
+    async def handle_mute_user(call: ServiceCall) -> None:
         """Handle the mute_user service call."""
         group_id = call.data["group_id"]
         user_id = call.data["user_id"]
@@ -57,7 +55,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         reason = call.data.get("reason")
         await coordinator.api.async_mute_user(group_id, user_id, duration, reason)
 
-    async def handle_warn_user(call) -> None:
+    async def handle_warn_user(call: ServiceCall) -> None:
         """Handle the warn_user service call."""
         group_id = call.data["group_id"]
         user_id = call.data["user_id"]

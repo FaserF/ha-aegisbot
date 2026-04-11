@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-
 from datetime import timedelta
 from typing import Any
 
@@ -46,7 +45,9 @@ class AegisBotDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.async_get_security_intel(),
             )
 
-            lock_map = {lock_data["group_id"]: lock_data["locks"] for lock_data in locks}
+            lock_map = {
+                lock_data["group_id"]: lock_data["locks"] for lock_data in locks
+            }
 
             return {
                 "health": health,
@@ -59,5 +60,3 @@ class AegisBotDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(f"Error communicating with API: {error}") from error
         except Exception as error:
             raise UpdateFailed(f"Unexpected error: {error}") from error
-
-
