@@ -12,6 +12,8 @@
   "loggers": [
     "aegisbot"
   ],
-  "requirements": [],
+  "requirements": [
+    "async_timeout"
+  ],
   "version": "1.0.0"
 }

@@ -17,8 +17,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements_test.txt || echo "No test requirements file found"
-          pip install pytest pytest-asyncio pytest-cov homeassistant aiohttp
+          pip install homeassistant
+          pip install -r requirements_test.txt
       - name: Test with pytest
         run: |
           pytest --cov=custom_components.aegisbot --cov-report=xml
