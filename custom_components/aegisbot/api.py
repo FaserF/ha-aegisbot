@@ -179,6 +179,8 @@ class AegisBotApiClient:
             raise AegisBotApiClientCommunicationError(
                 "Error fetching information from API",
             ) from exception
+        except AegisBotApiClientError:
+            raise
         except Exception as exception:  # pylint: disable=broad-except
             raise AegisBotApiClientError(
                 f"Unexpected error: {exception}"
