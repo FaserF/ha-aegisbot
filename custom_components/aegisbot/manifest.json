@@ -13,7 +13,7 @@
     "aegisbot"
   ],
   "requirements": [
-    "async_timeout"
+    "async_timeout==5.0.1"
   ],
   "version": "1.0.0"
 }
