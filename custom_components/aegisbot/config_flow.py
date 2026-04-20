@@ -52,7 +52,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     return {"title": data[CONF_URL]}
 
 
-class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):
+class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
     """Handle a config flow for AegisBot."""
 
     VERSION = 1
