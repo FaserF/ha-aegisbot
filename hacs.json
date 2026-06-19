@@ -1,5 +1,7 @@
 {
   "name": "AegisBot",
   "render_readme": true,
-  "country": "DE"
+  "country": "DE",
+  "zip_release": true,
+  "filename": "aegisbot.zip"
 }
