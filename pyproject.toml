@@ -1,6 +1,6 @@
 [project]
 name = "ha-aegisbot"
-version = "1.4.2"
+version = "1.0.2-dev0"
 description = "Home Assistant integration for aegisbot devices."
 authors = [
     {name = "FaserF", email = "github@fabiseitz.de"}
