@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mit AegisBot verbinden",
+        "description": "Geben Sie Ihre AegisBot-Instanz-URL und ein sicheres API-Token ein.",
+        "data": {
+          "url": "Instanz-URL",
+          "api_key": "API-Schlüssel"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zu AegisBot fehlgeschlagen. Überprüfen Sie URL und Verbindung.",
+      "invalid_auth": "Ungültiger API-Schlüssel. Bitte überprüfen Sie Ihre Anmeldedaten.",
+      "unknown": "Ein unerwarteter Fehler ist aufgetreten."
+    },
+    "abort": {
+      "already_configured": "Diese AegisBot-Instanz ist bereits konfiguriert."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "protected_groups": { "name": "Geschützte Gruppen" },
+      "active_warnings": { "name": "Aktive Warnungen" },
+      "malicious_links": { "name": "Blockierte schädliche Links" },
+      "ai_faq_count": { "name": "KI-FAQ-Anfragen" }
+    },
+    "switch": {
+      "lock_media": { "name": "Medien sperren" },
+      "lock_links": { "name": "Links sperren" },
+      "lock_rtl": { "name": "RTL sperren" },
+      "lock_stickers": { "name": "Sticker sperren" },
+      "lock_gifs": { "name": "GIFs sperren" },
+      "lock_documents": { "name": "Dokumente sperren" },
+      "lock_voice": { "name": "Sprachnachrichten sperren" },
+      "lock_video_notes": { "name": "Videonotizen sperren" },
+      "lock_contacts": { "name": "Kontakte sperren" },
+      "lock_location": { "name": "Standort sperren" },
+      "lock_games": { "name": "Spiele sperren" },
+      "lock_polls": { "name": "Umfragen sperren" },
+      "lock_inline": { "name": "Inline-Modus sperren" },
+      "lock_buttons": { "name": "Buttons sperren" },
+      "lock_forwards": { "name": "Weiterleitungen sperren" },
+      "lock_commands": { "name": "Befehle sperren" },
+      "lock_emails": { "name": "E-Mails sperren" },
+      "lock_usernames": { "name": "Benutzernamen sperren" },
+      "lock_markdown": { "name": "Markdown sperren" }
+    },
+    "button": {
+      "sync_filters": { "name": "Globale Filter synchronisieren" }
+    }
+  }
+}
