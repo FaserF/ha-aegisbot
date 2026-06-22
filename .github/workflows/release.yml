@@ -210,7 +210,8 @@ jobs:
 
       - name: 📦 Zip Component
         run: |
-          zip -r aegisbot.zip custom_components/aegisbot
+          cd custom_components/aegisbot
+          zip -r ../../aegisbot.zip .
 
       - name: Download Release Body Artifact
         uses: actions/download-artifact@v8
