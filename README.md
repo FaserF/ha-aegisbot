@@ -1,6 +1,7 @@
 # AegisBot (for Home Assistant)
 
 [![GitHub Release](https://img.shields.io/github/release/FaserF/ha-aegisbot.svg?style=flat-square)](https://github.com/FaserF/ha-aegisbot/releases)
+[![Downloads (Current release)](https://img.shields.io/github/downloads/FaserF/ha-aegisbot/latest/integration.zip?label=Downloads%20(Current%20release)&style=for-the-badge)](https://github.com/FaserF/ha-aegisbot/releases)
 [![License](https://img.shields.io/github/license/FaserF/ha-aegisbot.svg?style=flat-square)](LICENSE)
 [![hacs](https://img.shields.io/badge/HACS-custom-orange.svg?style=flat-square)](https://hacs.xyz)
 [![CI Orchestrator](https://github.com/FaserF/ha-aegisbot/actions/workflows/ci-orchestrator.yml/badge.svg)](https://github.com/FaserF/ha-aegisbot/actions/workflows/ci-orchestrator.yml)
