@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/github/license/FaserF/ha-aegisbot.svg?style=flat-square)](LICENSE)
 [![hacs](https://img.shields.io/badge/HACS-custom-orange.svg?style=flat-square)](https://hacs.xyz)
 [![CI Orchestrator](https://github.com/FaserF/ha-aegisbot/actions/workflows/ci-orchestrator.yml/badge.svg)](https://github.com/FaserF/ha-aegisbot/actions/workflows/ci-orchestrator.yml)
-[![Downloads (Current release)](https://img.shields.io/github/downloads/FaserF/ha-aegisbot/latest/integration.zip?label=Downloads%20(Current%20release)&style=flat-square)](https://github.com/FaserF/ha-aegisbot/releases)
+[![Downloads (Current release)](https://img.shields.io/github/downloads/FaserF/ha-aegisbot/latest/aegisbot.zip?label=Downloads%20(Current%20release)&style=flat-square)](https://github.com/FaserF/ha-aegisbot/releases)
 
 A professional, modern Home Assistant integration for [**AegisBot**](https://github.com/FaserF/AegisBot) — the advanced Telegram (and Messenger) group defender. Monitor group health, track moderation stats, and manage security protocols directly from your Home Assistant dashboard.
 
