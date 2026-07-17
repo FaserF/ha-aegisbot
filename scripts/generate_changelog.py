@@ -7,7 +7,6 @@ import subprocess
 import sys
 from typing import Any
 
-
 # Noise filter — commits matching ANY pattern are silently dropped
 NOISE_PATTERNS = [
     r"^\s*$",
@@ -345,7 +344,10 @@ def main() -> None:
                 existing_item["hashes"].append(commit_hash)
             continue
 
-        item: dict[str, Any] = {"display": display, "hashes": [commit_hash] if commit_hash else []}
+        item: dict[str, Any] = {
+            "display": display,
+            "hashes": [commit_hash] if commit_hash else [],
+        }
         seen_items[norm_key] = item
         buckets[bucket].append(item)
 
@@ -383,7 +385,10 @@ def main() -> None:
         if collapse:
             for i in range(MAX_PER_SECTION):
                 formatted = get_formatted_item(
-                    bucket_list[i]["display"], bucket_list[i]["hashes"], repo, commit_authors
+                    bucket_list[i]["display"],
+                    bucket_list[i]["hashes"],
+                    repo,
+                    commit_authors,
                 )
                 out.append(f"- {formatted}")
             remaining = len(bucket_list) - MAX_PER_SECTION
@@ -393,7 +398,10 @@ def main() -> None:
             out.append("")
             for i in range(MAX_PER_SECTION, len(bucket_list)):
                 formatted = get_formatted_item(
-                    bucket_list[i]["display"], bucket_list[i]["hashes"], repo, commit_authors
+                    bucket_list[i]["display"],
+                    bucket_list[i]["hashes"],
+                    repo,
+                    commit_authors,
                 )
                 out.append(f"- {formatted}")
             out.append("")
