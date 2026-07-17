@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 def auto_enable_custom_integrations(hass):
     """Enable custom integrations in Home Assistant."""
     hass.data.pop("custom_components", None)
+    hass.config.components.add("hassio")
     yield
 
 

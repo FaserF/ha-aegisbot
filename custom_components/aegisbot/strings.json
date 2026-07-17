@@ -8,6 +8,13 @@
           "url": "Instance URL",
           "api_key": "API Key"
         }
+      },
+      "hassio_confirm": {
+        "title": "Set up AegisBot via Supervisor",
+        "description": "Do you want to set up AegisBot addon ({addon})? You will need to enter your AegisBot API Key.",
+        "data": {
+          "api_key": "API Key"
+        }
       }
     },
     "error": {

@@ -8,6 +8,13 @@
           "url": "Instanz-URL",
           "api_key": "API-Schlüssel"
         }
+      },
+      "hassio_confirm": {
+        "title": "AegisBot über Supervisor einrichten",
+        "description": "Möchten Sie das AegisBot-Addon ({addon}) einrichten? Sie müssen Ihren AegisBot-API-Schlüssel eingeben.",
+        "data": {
+          "api_key": "API-Schlüssel"
+        }
       }
     },
     "error": {
