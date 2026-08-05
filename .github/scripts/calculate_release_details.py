@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 import glob
 import json
 import os
@@ -279,7 +279,6 @@ def main():
     ]
 
     body = "\n".join(body_parts)
-    release_body = body
     with open("release_body.md", "w", encoding="utf-8") as f:
         f.write(body)
 
