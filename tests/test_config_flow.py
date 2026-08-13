@@ -98,4 +98,3 @@ async def test_flow_zeroconf_discovery(hass, mock_api):
         )
         assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
         assert result["title"] == "http://192.168.1.100:8077"
-

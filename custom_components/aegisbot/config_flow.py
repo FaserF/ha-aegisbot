@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import re
 from typing import Any
 
 import voluptuous as vol
@@ -83,7 +82,9 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
     async def _async_get_addon_manager(self, slug: str) -> Any:
         """Return the addon manager."""
         try:
-            from homeassistant.components.hassio import AddonManager  # type: ignore[attr-defined]
+            from homeassistant.components.hassio import (
+                AddonManager,  # type: ignore[attr-defined]
+            )
 
             return AddonManager(self.hass, LOGGER, slug, ADDON_NAME)
         except (ImportError, AttributeError):
@@ -136,7 +137,9 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         """Handle the initial step."""
         is_hassio_env = False
         try:
-            from homeassistant.components.hassio import is_hassio  # type: ignore[attr-defined]
+            from homeassistant.components.hassio import (
+                is_hassio,  # type: ignore[attr-defined]
+            )
 
             is_hassio_env = is_hassio(self.hass)
         except (ImportError, AttributeError):
@@ -153,7 +156,9 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
 
         errors: dict[str, str] = {}
 
-        suggested_url = self.discovery_info.get(CONF_URL) or f"http://localhost:{DEFAULT_PORT}"
+        suggested_url = (
+            self.discovery_info.get(CONF_URL) or f"http://localhost:{DEFAULT_PORT}"
+        )
 
         if user_input is None and not self.discovery_info.get(CONF_URL):
             candidates = [
@@ -197,8 +202,18 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_URL, default=user_input.get(CONF_URL) if user_input else suggested_url): str,
-                    vol.Required(CONF_API_KEY, default=user_input.get(CONF_API_KEY) if user_input else prefilled_key): str,
+                    vol.Required(
+                        CONF_URL,
+                        default=user_input.get(CONF_URL)
+                        if user_input
+                        else suggested_url,
+                    ): str,
+                    vol.Required(
+                        CONF_API_KEY,
+                        default=user_input.get(CONF_API_KEY)
+                        if user_input
+                        else prefilled_key,
+                    ): str,
                 }
             ),
             errors=errors,
@@ -258,8 +273,12 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         if api_key:
             # Auto-validate and connect if API key was discovered or found locally
             try:
-                info = await validate_input(self.hass, {CONF_URL: url, CONF_API_KEY: api_key})
-                return self.async_create_entry(title=info["title"], data={CONF_URL: url, CONF_API_KEY: api_key})
+                info = await validate_input(
+                    self.hass, {CONF_URL: url, CONF_API_KEY: api_key}
+                )
+                return self.async_create_entry(
+                    title=info["title"], data={CONF_URL: url, CONF_API_KEY: api_key}
+                )
             except Exception:  # noqa: BLE001
                 pass
 
@@ -280,13 +299,20 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         if discovery_info is not None:
             slug = getattr(discovery_info, "slug", None)
             if slug:
-                for supported in ["aegisbot", "aegisbot-edge", ADDON_STABLE_SLUG, ADDON_EDGE_SLUG]:
+                for supported in [
+                    "aegisbot",
+                    "aegisbot-edge",
+                    ADDON_STABLE_SLUG,
+                    ADDON_EDGE_SLUG,
+                ]:
                     if slug == supported or slug.endswith(f"_{supported}"):
                         await self._async_prefill_addon_info(slug)
                         return await self.async_step_user()
 
         try:
-            from homeassistant.components.hassio import AddonState  # type: ignore[attr-defined]
+            from homeassistant.components.hassio import (
+                AddonState,  # type: ignore[attr-defined]
+            )
         except (ImportError, AttributeError):
             return await self.async_step_user()
 
