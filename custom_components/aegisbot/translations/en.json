@@ -9,17 +9,22 @@
           "api_key": "API Key"
         }
       },
-      "hassio_confirm": {
-        "title": "Set up AegisBot via Supervisor",
-        "description": "Do you want to set up AegisBot addon ({addon})? You will need to enter your AegisBot API Key.",
+      "discovery_confirm": {
+        "title": "Discovered AegisBot",
+        "description": "Discovered AegisBot instance at {url}. Enter the API key to connect or click Submit if auto-detected.",
         "data": {
           "api_key": "API Key"
         }
+      },
+      "hassio_confirm": {
+        "title": "Install AegisBot Addon",
+        "description": "Do you want to install and start the official {addon} Add-on?"
       }
     },
     "error": {
       "cannot_connect": "Failed to connect to AegisBot. Check URL and connectivity.",
       "invalid_auth": "Invalid API Key. Please verify your credentials.",
+      "addon_install_error": "Failed to install the AegisBot Add-on via Supervisor.",
       "unknown": "An unexpected error occurred."
     },
     "abort": {

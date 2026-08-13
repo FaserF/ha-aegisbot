@@ -1,13 +1,13 @@
 {
   "domain": "aegisbot",
   "name": "AegisBot",
+  "after_dependencies": [
+    "hassio"
+  ],
   "codeowners": [
     "@FaserF"
   ],
   "config_flow": true,
-  "dependencies": [
-    "hassio"
-  ],
   "documentation": "https://github.com/FaserF/ha-aegisbot",
   "integration_type": "hub",
   "iot_class": "local_polling",
@@ -18,5 +18,11 @@
   "requirements": [
     "async_timeout==5.0.1"
   ],
-  "version": "1.0.2-dev0"
+  "version": "1.0.2-dev0",
+  "zeroconf": [
+    {
+      "name": "aegisbot*",
+      "type": "_ha-aegisbot._tcp.local."
+    }
+  ]
 }

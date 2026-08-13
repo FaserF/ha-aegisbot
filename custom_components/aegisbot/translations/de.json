@@ -9,17 +9,22 @@
           "api_key": "API-Schlüssel"
         }
       },
-      "hassio_confirm": {
-        "title": "AegisBot über Supervisor einrichten",
-        "description": "Möchten Sie das AegisBot-Addon ({addon}) einrichten? Sie müssen Ihren AegisBot-API-Schlüssel eingeben.",
+      "discovery_confirm": {
+        "title": "AegisBot entdeckt",
+        "description": "AegisBot-Instanz unter {url} entdeckt. Geben Sie den API-Schlüssel ein oder klicken Sie auf Absenden, falls dieser automatisch erkannt wurde.",
         "data": {
           "api_key": "API-Schlüssel"
         }
+      },
+      "hassio_confirm": {
+        "title": "AegisBot-Addon installieren",
+        "description": "Möchten Sie das offizielle {addon}-Addon installieren und starten?"
       }
     },
     "error": {
       "cannot_connect": "Verbindung zu AegisBot fehlgeschlagen. Überprüfen Sie URL und Verbindung.",
       "invalid_auth": "Ungültiger API-Schlüssel. Bitte überprüfen Sie Ihre Anmeldedaten.",
+      "addon_install_error": "Fehler beim Installieren des AegisBot-Addons über den Supervisor.",
       "unknown": "Ein unerwarteter Fehler ist aufgetreten."
     },
     "abort": {
