@@ -49,7 +49,7 @@ class AegisBotApiClient:
     async def async_get_security_intel(self) -> dict[str, Any]:
         """Get global security intelligence (threat map)."""
         return await self._api_wrapper(
-            method="get", url=f"{self._url}/api/v1/admin/groups/security/threat-map"
+            method="get", url=f"{self._url}/api/v1/groups/security/threat-map"
         )
 
     async def async_get_group_health(self) -> list[dict[str, Any]]:
@@ -61,7 +61,9 @@ class AegisBotApiClient:
 
     async def async_get_stats(self) -> dict[str, Any]:
         """Get global statistics."""
-        return await self._api_wrapper(method="get", url=f"{self._url}/api/v1/stats")
+        return await self._api_wrapper(
+            method="get", url=f"{self._url}/api/v1/stats/overview"
+        )
 
     async def async_get_locks(self, group_id: int) -> list[dict[str, Any]]:
         """Get locks for a group."""
@@ -163,12 +165,10 @@ class AegisBotApiClient:
         )
 
     async def async_get_reputation(
-        self, user_id: int, group_id: int | None = None
+        self, user_id: int, group_id: int
     ) -> dict[str, Any]:
         """Get reputation information for a user."""
-        url = f"{self._url}/api/v1/reputation/{user_id}"
-        if group_id is not None:
-            url += f"?group_id={group_id}"
+        url = f"{self._url}/api/v1/reputation/{group_id}/member/{user_id}"
         return await self._api_wrapper(method="get", url=url)
 
     async def async_adjust_reputation(
@@ -179,14 +179,11 @@ class AegisBotApiClient:
         group_id: int | None = None,
     ) -> dict[str, Any]:
         """Adjust reputation score for a user."""
-        data: dict[str, Any] = {"delta": delta}
-        if reason:
-            data["reason"] = reason
-        if group_id is not None:
-            data["group_id"] = group_id
+        gid = group_id or 0
+        data: dict[str, Any] = {"score_delta": delta, "xp_delta": delta}
         return await self._api_wrapper(
             method="post",
-            url=f"{self._url}/api/v1/reputation/{user_id}/adjust",
+            url=f"{self._url}/api/v1/reputation/{gid}/adjust/{user_id}",
             data=data,
         )
 
@@ -196,31 +193,31 @@ class AegisBotApiClient:
         """Apply a security preset to a group."""
         return await self._api_wrapper(
             method="post",
-            url=f"{self._url}/api/v1/groups/{group_id}/presets/{preset_name}",
+            url=f"{self._url}/api/v1/templates/presets/apply/{preset_name}/{group_id}",
         )
 
     async def async_get_governance_report(
         self, group_id: int | None = None
     ) -> dict[str, Any]:
         """Get governance report."""
-        url = (
-            f"{self._url}/api/v1/governance/report/{group_id}"
-            if group_id is not None
-            else f"{self._url}/api/v1/governance/report"
-        )
+        gid = group_id or 1
+        url = f"{self._url}/api/v1/report/governance/{gid}"
         return await self._api_wrapper(method="get", url=url)
 
     async def async_mark_notifications_read(
         self, notification_ids: list[str] | None = None
     ) -> dict[str, Any]:
         """Mark notifications as read."""
-        data: dict[str, Any] = {}
-        if notification_ids is not None:
-            data["notification_ids"] = notification_ids
+        if notification_ids:
+            for notif_id in notification_ids:
+                await self._api_wrapper(
+                    method="post",
+                    url=f"{self._url}/api/v1/notifications/{notif_id}/read",
+                )
+            return {"status": "success"}
         return await self._api_wrapper(
             method="post",
-            url=f"{self._url}/api/v1/notifications/mark-read",
-            data=data if data else None,
+            url=f"{self._url}/api/v1/notifications/read-all",
         )
 
     async def async_maintenance_vacuum(self) -> dict[str, Any]:
@@ -232,27 +229,27 @@ class AegisBotApiClient:
     async def async_maintenance_cleanup(
         self, days: int | None = None
     ) -> dict[str, Any]:
-        """Trigger log and event cleanup."""
+        """Trigger log and group cleanup."""
         data: dict[str, Any] = {}
         if days is not None:
             data["days"] = days
         return await self._api_wrapper(
             method="post",
-            url=f"{self._url}/api/v1/maintenance/cleanup",
+            url=f"{self._url}/api/v1/maintenance/cleanup-groups",
             data=data if data else None,
         )
 
     async def async_maintenance_purge(self, group_id: int) -> dict[str, Any]:
-        """Purge data for a specific group."""
+        """Purge logs."""
         return await self._api_wrapper(
             method="post",
-            url=f"{self._url}/api/v1/maintenance/purge/{group_id}",
+            url=f"{self._url}/api/v1/maintenance/purge-logs",
         )
 
     async def async_maintenance_live_test(self) -> dict[str, Any]:
-        """Run maintenance live test."""
+        """Run maintenance live test suite."""
         return await self._api_wrapper(
-            method="post", url=f"{self._url}/api/v1/maintenance/live-test"
+            method="post", url=f"{self._url}/api/v1/maintenance/live-test-suite"
         )
 
     async def async_get_maintenance_status(self) -> dict[str, Any]:

@@ -258,3 +258,13 @@ whatsapp_action:
       required: false
       selector:
         object:
+
+sync_filters:
+  description: Trigger global filter synchronization.
+
+maintenance_vacuum:
+  description: Trigger SQLite database vacuum and optimization.
+
+maintenance_live_test:
+  description: Run end-to-end diagnostic test suite.
+

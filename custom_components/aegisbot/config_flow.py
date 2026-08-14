@@ -7,9 +7,14 @@ import os
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_URL
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -273,33 +278,32 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         api_key = self.discovery_info.get(CONF_API_KEY, "")
 
         if user_input is not None:
-            clean_input = {
-                CONF_URL: url,
-                CONF_API_KEY: user_input.get(CONF_API_KEY) or api_key,
-            }
-            return await self.async_step_user(clean_input)
+            final_api_key = user_input.get(CONF_API_KEY) or api_key
+            return await self.async_step_user(
+                {
+                    CONF_URL: url,
+                    CONF_API_KEY: final_api_key,
+                }
+            )
 
         if api_key:
-            # Auto-validate and connect if API key was discovered or found locally
-            try:
-                info = await validate_input(
-                    self.hass, {CONF_URL: url, CONF_API_KEY: api_key}
-                )
-                return self.async_create_entry(
-                    title=info["title"], data={CONF_URL: url, CONF_API_KEY: api_key}
-                )
-            except Exception:  # noqa: BLE001
-                pass
+            # Token is known: simple 1-click confirmation dialog
+            return self.async_show_form(
+                step_id="discovery_confirm",
+                description_placeholders={"url": url},
+            )
 
+        # Token is unknown: show input field for API Key
         return self.async_show_form(
             step_id="discovery_confirm",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_API_KEY, default=api_key): str,
+                    vol.Required(CONF_API_KEY, default=""): str,
                 }
             ),
             description_placeholders={"url": url},
         )
+
 
     async def async_step_hassio(
         self, discovery_info: HassioServiceInfo | None = None
@@ -366,6 +370,41 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
             step_id="hassio_confirm",
             data_schema=vol.Schema({}),
             description_placeholders={"addon": ADDON_NAME},
+        )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> OptionsFlow:
+        """Create the options flow."""
+        return AegisBotOptionsFlowHandler(config_entry)
+
+
+class AegisBotOptionsFlowHandler(OptionsFlow):
+    """Handle options for AegisBot."""
+
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        "scan_interval",
+                        default=self.config_entry.options.get("scan_interval", 30),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
+                }
+            ),
         )
 
 

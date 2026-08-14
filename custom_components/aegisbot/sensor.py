@@ -172,7 +172,11 @@ GLOBAL_SENSORS: tuple[AegisBotSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="MB",
         entity_registry_enabled_default=False,
-        value_fn=lambda data: data.get("maintenance", {}).get("db_size_mb", 0),
+        value_fn=lambda data: (
+            round(data.get("maintenance", {}).get("db_size_bytes", 0) / (1024 * 1024), 2)
+            if data.get("maintenance", {}).get("db_size_bytes") is not None
+            else data.get("maintenance", {}).get("db_size_mb", 0)
+        ),
         attributes_fn=lambda data: {
             "last_vacuum": data.get("maintenance", {}).get("last_vacuum"),
             "table_count": data.get("maintenance", {}).get("table_count"),

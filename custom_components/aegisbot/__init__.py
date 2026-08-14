@@ -116,6 +116,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await coordinator.api.async_whatsapp_action(action=action, data=data)
         await coordinator.async_request_refresh()
 
+    async def handle_maintenance_vacuum(call: ServiceCall) -> None:
+        """Handle the maintenance_vacuum service call."""
+        await coordinator.api.async_maintenance_vacuum()
+        await coordinator.async_request_refresh()
+
+    async def handle_maintenance_live_test(call: ServiceCall) -> None:
+        """Handle the maintenance_live_test service call."""
+        await coordinator.api.async_maintenance_live_test()
+        await coordinator.async_request_refresh()
+
+    async def handle_sync_filters(call: ServiceCall) -> None:
+        """Handle the sync_filters service call."""
+        await coordinator.api.async_sync_filters()
+        await coordinator.async_request_refresh()
+
     hass.services.async_register(DOMAIN, "send_message", handle_send_message)
     hass.services.async_register(DOMAIN, "ban_user", handle_ban_user)
     hass.services.async_register(DOMAIN, "unban_user", handle_unban_user)
@@ -124,10 +139,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(DOMAIN, "broadcast", handle_broadcast)
     hass.services.async_register(DOMAIN, "adjust_reputation", handle_adjust_reputation)
     hass.services.async_register(DOMAIN, "apply_preset", handle_apply_preset)
+    hass.services.async_register(DOMAIN, "sync_filters", handle_sync_filters)
+    hass.services.async_register(
+        DOMAIN, "maintenance_vacuum", handle_maintenance_vacuum
+    )
     hass.services.async_register(
         DOMAIN, "maintenance_cleanup", handle_maintenance_cleanup
     )
     hass.services.async_register(DOMAIN, "maintenance_purge", handle_maintenance_purge)
+    hass.services.async_register(
+        DOMAIN, "maintenance_live_test", handle_maintenance_live_test
+    )
     hass.services.async_register(
         DOMAIN, "mark_notifications_read", handle_mark_notifications_read
     )

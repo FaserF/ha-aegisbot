@@ -71,19 +71,24 @@ class AegisBotDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "health": health if isinstance(health, dict) else {},
                 "stats": stats.get("data", {}) if isinstance(stats, dict) else {},
                 "groups": {
-                    g["group_id"]: g
+                    (
+                        int(g["group_id"])
+                        if str(g.get("group_id", "")).lstrip("-").isdigit()
+                        else g.get("group_id")
+                    ): g
                     for g in (groups if isinstance(groups, list) else [])
+                    if isinstance(g, dict) and "group_id" in g
                 },
                 "locks": lock_map,
                 "intel": intel.get("data", {}) if isinstance(intel, dict) else {},
                 "maintenance": (
                     maintenance.get("data", {})
-                    if isinstance(maintenance, dict)
+                    if isinstance(maintenance, dict) and "data" in maintenance
                     else (maintenance if isinstance(maintenance, dict) else {})
                 ),
                 "whatsapp": (
                     whatsapp.get("data", {})
-                    if isinstance(whatsapp, dict)
+                    if isinstance(whatsapp, dict) and "data" in whatsapp
                     else (whatsapp if isinstance(whatsapp, dict) else {})
                 ),
             }
