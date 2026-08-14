@@ -15,14 +15,33 @@ async def test_sensors(hass, mock_api):
     ):
         mock_api.async_get_data.return_value = {"status": "healthy"}
         mock_api.async_get_stats.return_value = {
-            "data": {"protected_groups": 5, "active_warnings": 2}
+            "data": {"protected_groups": 5, "active_warnings": 2, "total_users": 100}
         }
         mock_api.async_get_group_health.return_value = [
-            {"group_id": 1, "title": "Test Group", "health_score": 90}
+            {
+                "group_id": 1,
+                "title": "Test Group",
+                "health_score": 90,
+                "platform": "telegram",
+                "member_count": 50,
+            }
         ]
         mock_api.async_get_all_locks.return_value = [{"group_id": 1, "locks": []}]
         mock_api.async_get_security_intel.return_value = {
-            "data": {"stats": {"total_alerts": 3, "sync_points": 1}}
+            "data": {
+                "stats": {
+                    "total_alerts": 3,
+                    "sync_points": 1,
+                    "active_raids": 0,
+                    "threat_level": "low",
+                }
+            }
+        }
+        mock_api.async_get_maintenance_status.return_value = {
+            "data": {"db_size_mb": 42, "event_backlog": 0, "table_count": 10}
+        }
+        mock_api.async_get_whatsapp_status.return_value = {
+            "data": {"status": "connected"}
         }
 
         entry = MockConfigEntry(
@@ -39,12 +58,20 @@ async def test_sensors(hass, mock_api):
         state = hass.states.get("sensor.aegisbot_system_protected_groups")
         assert state
         assert state.state == "5"
+        assert state.attributes.get("total_users") == 100
 
         state = hass.states.get("sensor.aegisbot_system_active_warnings")
         assert state
         assert state.state == "2"
 
+        state = hass.states.get("sensor.aegisbot_system_active_security_signals")
+        assert state
+        assert state.state == "3"
+        assert state.attributes.get("threat_level") == "low"
+
         # Check group sensors
         state = hass.states.get("sensor.group_test_group_health_score")
         assert state
         assert state.state == "90"
+        assert state.attributes.get("platform") == "telegram"
+        assert state.attributes.get("member_count") == 50

@@ -23,6 +23,7 @@ class AegisBotDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(
             hass,
             LOGGER,
+            config_entry=entry,
             name=DOMAIN,
             update_interval=timedelta(seconds=DEFAULT_UPDATE_INTERVAL),
         )
@@ -37,24 +38,54 @@ class AegisBotDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Update data via library."""
         try:
             # Fetch all required data in parallel
-            health, stats, groups, locks, intel = await asyncio.gather(
+            (
+                health,
+                stats,
+                groups,
+                locks,
+                intel,
+                maintenance,
+                whatsapp,
+            ) = await asyncio.gather(
                 self.api.async_get_data(),
                 self.api.async_get_stats(),
                 self.api.async_get_group_health(),
                 self.api.async_get_all_locks(),
                 self.api.async_get_security_intel(),
+                self.api.async_get_maintenance_status(),
+                self.api.async_get_whatsapp_status(),
+                return_exceptions=True,
             )
 
-            lock_map = {
-                lock_data["group_id"]: lock_data["locks"] for lock_data in locks
-            }
+            # Re-raise if critical endpoint failed with error
+            if isinstance(health, Exception):
+                raise health
+
+            lock_map = {}
+            if isinstance(locks, list):
+                lock_map = {
+                    lock_data["group_id"]: lock_data["locks"] for lock_data in locks
+                }
 
             return {
-                "health": health,
-                "stats": stats.get("data", {}),
-                "groups": {g["group_id"]: g for g in groups},
+                "health": health if isinstance(health, dict) else {},
+                "stats": stats.get("data", {}) if isinstance(stats, dict) else {},
+                "groups": {
+                    g["group_id"]: g
+                    for g in (groups if isinstance(groups, list) else [])
+                },
                 "locks": lock_map,
-                "intel": intel.get("data", {}),
+                "intel": intel.get("data", {}) if isinstance(intel, dict) else {},
+                "maintenance": (
+                    maintenance.get("data", {})
+                    if isinstance(maintenance, dict)
+                    else (maintenance if isinstance(maintenance, dict) else {})
+                ),
+                "whatsapp": (
+                    whatsapp.get("data", {})
+                    if isinstance(whatsapp, dict)
+                    else (whatsapp if isinstance(whatsapp, dict) else {})
+                ),
             }
         except AegisBotApiClientError as error:
             raise UpdateFailed(f"Error communicating with API: {error}") from error

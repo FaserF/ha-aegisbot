@@ -72,6 +72,7 @@ norecursedirs = [
     "testing_config",
 ]
 asyncio_mode = "auto"
+addopts = "-p no:socket"
 filterwarnings = [
     "ignore:Inheritance class HomeAssistantApplication from web.Application is discouraged:DeprecationWarning",
 ]

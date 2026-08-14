@@ -15,6 +15,8 @@ async def test_binary_sensors(hass, mock_api):
     ):
         mock_api.async_get_data.return_value = {
             "status": "healthy",
+            "version": "2.0.0",
+            "environment": "production",
             "infrastructure": {"database": "healthy"},
         }
         mock_api.async_get_stats.return_value = {"data": {}}
@@ -24,6 +26,10 @@ async def test_binary_sensors(hass, mock_api):
         mock_api.async_get_all_locks.return_value = [{"group_id": 1, "locks": []}]
         mock_api.async_get_security_intel.return_value = {
             "data": {"stats": {"active_raids": 0}}
+        }
+        mock_api.async_get_maintenance_status.return_value = {"data": {}}
+        mock_api.async_get_whatsapp_status.return_value = {
+            "data": {"status": "connected", "phone_number": "+1234567890"}
         }
 
         entry = MockConfigEntry(
@@ -40,6 +46,7 @@ async def test_binary_sensors(hass, mock_api):
         state = hass.states.get("binary_sensor.aegisbot_system_global_status")
         assert state
         assert state.state == "on"
+        assert state.attributes.get("version") == "2.0.0"
 
         state = hass.states.get("binary_sensor.aegisbot_system_active_raid_detected")
         assert state
@@ -49,3 +56,4 @@ async def test_binary_sensors(hass, mock_api):
         state = hass.states.get("binary_sensor.group_test_group_group_active")
         assert state
         assert state.state == "on"
+        assert state.attributes.get("platform") == "telegram"

@@ -27,6 +27,7 @@ class AegisBotSensorEntityDescription(SensorEntityDescription):
     """Describe an AegisBot sensor."""
 
     value_fn: Callable[[dict[str, Any]], StateType]
+    attributes_fn: Callable[[dict[str, Any]], dict[str, Any]] | None = None
 
 
 class AegisBotSensorEntity(CoordinatorEntity[AegisBotDataCoordinator], SensorEntity):
@@ -45,6 +46,7 @@ class AegisBotSensorEntity(CoordinatorEntity[AegisBotDataCoordinator], SensorEnt
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
+        self._attr_translation_key = description.key
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name="AegisBot System",
@@ -56,6 +58,13 @@ class AegisBotSensorEntity(CoordinatorEntity[AegisBotDataCoordinator], SensorEnt
     def native_value(self) -> StateType:
         """Return the sensor value."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra state attributes."""
+        if self.entity_description.attributes_fn:
+            return self.entity_description.attributes_fn(self.coordinator.data)
+        return None
 
 
 class AegisBotGroupSensorEntity(
@@ -78,6 +87,7 @@ class AegisBotGroupSensorEntity(
         self.entity_description = description
         self._group_id = group_id
         self._attr_unique_id = f"{entry.entry_id}_{group_id}_{description.key}"
+        self._attr_translation_key = description.key
 
         group_data = coordinator.data["groups"].get(group_id, {})
         group_title = group_data.get("title", f"Group {group_id}")
@@ -96,72 +106,108 @@ class AegisBotGroupSensorEntity(
         group_data = self.coordinator.data["groups"].get(self._group_id, {})
         return self.entity_description.value_fn(group_data)
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra state attributes."""
+        if self.entity_description.attributes_fn:
+            group_data = self.coordinator.data["groups"].get(self._group_id, {})
+            return self.entity_description.attributes_fn(group_data)
+        return None
+
 
 GLOBAL_SENSORS: tuple[AegisBotSensorEntityDescription, ...] = (
     AegisBotSensorEntityDescription(
         key="protected_groups",
-        name="Protected Groups",
         icon="mdi:shield-home",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["stats"].get("protected_groups", 0),
+        value_fn=lambda data: data.get("stats", {}).get("protected_groups", 0),
+        attributes_fn=lambda data: {
+            "total_users": data.get("stats", {}).get("total_users"),
+            "total_groups": len(data.get("groups", {})),
+        },
     ),
     AegisBotSensorEntityDescription(
         key="active_warnings",
-        name="Active Warnings",
         icon="mdi:alert",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["stats"].get("active_warnings", 0),
+        value_fn=lambda data: data.get("stats", {}).get("active_warnings", 0),
     ),
     AegisBotSensorEntityDescription(
         key="malicious_links",
-        name="Malicious Links Blocked",
         icon="mdi:link-off",
         state_class=SensorStateClass.TOTAL_INCREASING,
         entity_registry_enabled_default=False,
-        value_fn=lambda data: data["stats"].get("malicious_links", 0),
+        value_fn=lambda data: data.get("stats", {}).get("malicious_links", 0),
     ),
     AegisBotSensorEntityDescription(
         key="active_signals",
-        name="Active Security Signals",
         icon="mdi:wifi-marker",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["intel"]["stats"].get("total_alerts", 0),
+        value_fn=lambda data: (
+            data.get("intel", {}).get("stats", {}).get("total_alerts", 0)
+        ),
+        attributes_fn=lambda data: {
+            "raids": data.get("intel", {}).get("stats", {}).get("active_raids", 0),
+            "threat_level": data.get("intel", {}).get("stats", {}).get("threat_level"),
+        },
     ),
     AegisBotSensorEntityDescription(
         key="fed_sync_points",
-        name="Federated Sync Points",
         icon="mdi:webhook",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["intel"]["stats"].get("sync_points", 0),
+        value_fn=lambda data: (
+            data.get("intel", {}).get("stats", {}).get("sync_points", 0)
+        ),
     ),
     AegisBotSensorEntityDescription(
         key="ai_faq_count",
-        name="AI FAQ Requests",
         icon="mdi:robot",
         state_class=SensorStateClass.TOTAL_INCREASING,
         entity_registry_enabled_default=False,
-        value_fn=lambda data: data["stats"].get("ai_faq_count", 0),
+        value_fn=lambda data: data.get("stats", {}).get("ai_faq_count", 0),
+    ),
+    AegisBotSensorEntityDescription(
+        key="db_size_mb",
+        icon="mdi:database",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MB",
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: data.get("maintenance", {}).get("db_size_mb", 0),
+        attributes_fn=lambda data: {
+            "last_vacuum": data.get("maintenance", {}).get("last_vacuum"),
+            "table_count": data.get("maintenance", {}).get("table_count"),
+            "total_rows": data.get("maintenance", {}).get("total_rows"),
+        },
+    ),
+    AegisBotSensorEntityDescription(
+        key="event_backlog",
+        icon="mdi:tray-full",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: data.get("maintenance", {}).get("event_backlog", 0),
     ),
 )
 
 GROUP_SENSORS: tuple[AegisBotSensorEntityDescription, ...] = (
     AegisBotSensorEntityDescription(
         key="health_score",
-        name="Health Score",
         icon="mdi:heart-pulse",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda group: group.get("health_score", 0),
+        attributes_fn=lambda group: {
+            "platform": group.get("platform"),
+            "member_count": group.get("member_count"),
+            "security_preset": group.get("preset"),
+        },
     ),
     AegisBotSensorEntityDescription(
         key="events_7d",
-        name="Events (7d)",
         icon="mdi:history",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda group: group.get("events_7d", 0),
     ),
     AegisBotSensorEntityDescription(
         key="warnings",
-        name="Warnings",
         icon="mdi:alert-circle",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda group: group.get("warnings", 0),

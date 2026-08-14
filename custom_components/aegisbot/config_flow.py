@@ -12,8 +12,25 @@ from homeassistant.const import CONF_URL
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.service_info.hassio import HassioServiceInfo
-from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
+
+try:
+    from homeassistant.helpers.service_info.hassio import HassioServiceInfo
+except ImportError:
+    from homeassistant.components.hassio import (  # type: ignore[no-redef,assignment,attr-defined]
+        HassioServiceInfo,
+    )
+
+try:
+    from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
+except ImportError:
+    try:
+        from homeassistant.components.zeroconf import (  # type: ignore[no-redef,assignment,attr-defined]
+            ZeroconfServiceInfo,
+        )
+    except (ImportError, ModuleNotFoundError):
+        from unittest.mock import MagicMock
+
+        ZeroconfServiceInfo = MagicMock()  # type: ignore[misc,assignment]
 
 try:
     from homeassistant.helpers import selector
@@ -135,15 +152,7 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the initial step."""
-        is_hassio_env = False
-        try:
-            from homeassistant.components.hassio import (
-                is_hassio,  # type: ignore[attr-defined]
-            )
-
-            is_hassio_env = is_hassio(self.hass)
-        except (ImportError, AttributeError):
-            pass
+        is_hassio_env = "hassio" in getattr(self.hass.config, "components", set())
 
         if (
             user_input is None

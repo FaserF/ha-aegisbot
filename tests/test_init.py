@@ -65,3 +65,77 @@ async def test_services_registration(hass, mock_api):
         assert hass.services.has_service(DOMAIN, "unban_user")
         assert hass.services.has_service(DOMAIN, "mute_user")
         assert hass.services.has_service(DOMAIN, "warn_user")
+        assert hass.services.has_service(DOMAIN, "broadcast")
+        assert hass.services.has_service(DOMAIN, "adjust_reputation")
+        assert hass.services.has_service(DOMAIN, "apply_preset")
+        assert hass.services.has_service(DOMAIN, "maintenance_cleanup")
+        assert hass.services.has_service(DOMAIN, "maintenance_purge")
+        assert hass.services.has_service(DOMAIN, "mark_notifications_read")
+        assert hass.services.has_service(DOMAIN, "whatsapp_action")
+
+        # Test calling services
+        await hass.services.async_call(
+            DOMAIN,
+            "broadcast",
+            {"text": "test broadcast", "group_ids": [1], "platform": "telegram"},
+            blocking=True,
+        )
+        mock_api.async_broadcast.assert_called_once_with(
+            text="test broadcast", group_ids=[1], platform="telegram"
+        )
+
+        await hass.services.async_call(
+            DOMAIN,
+            "adjust_reputation",
+            {"user_id": 123, "delta": 5, "reason": "good", "group_id": 1},
+            blocking=True,
+        )
+        mock_api.async_adjust_reputation.assert_called_once_with(
+            user_id=123, delta=5, reason="good", group_id=1
+        )
+
+        await hass.services.async_call(
+            DOMAIN,
+            "apply_preset",
+            {"group_id": 1, "preset_name": "strict"},
+            blocking=True,
+        )
+        mock_api.async_apply_preset.assert_called_once_with(
+            group_id=1, preset_name="strict"
+        )
+
+        await hass.services.async_call(
+            DOMAIN,
+            "maintenance_cleanup",
+            {"days": 30},
+            blocking=True,
+        )
+        mock_api.async_maintenance_cleanup.assert_called_once_with(days=30)
+
+        await hass.services.async_call(
+            DOMAIN,
+            "maintenance_purge",
+            {"group_id": 1},
+            blocking=True,
+        )
+        mock_api.async_maintenance_purge.assert_called_once_with(group_id=1)
+
+        await hass.services.async_call(
+            DOMAIN,
+            "mark_notifications_read",
+            {"notification_ids": ["n1"]},
+            blocking=True,
+        )
+        mock_api.async_mark_notifications_read.assert_called_once_with(
+            notification_ids=["n1"]
+        )
+
+        await hass.services.async_call(
+            DOMAIN,
+            "whatsapp_action",
+            {"action": "reconnect", "data": {"force": True}},
+            blocking=True,
+        )
+        mock_api.async_whatsapp_action.assert_called_once_with(
+            action="reconnect", data={"force": True}
+        )

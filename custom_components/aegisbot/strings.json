@@ -36,7 +36,21 @@
       "protected_groups": { "name": "Protected Groups" },
       "active_warnings": { "name": "Active Warnings" },
       "malicious_links": { "name": "Malicious Links Blocked" },
-      "ai_faq_count": { "name": "AI FAQ Requests" }
+      "active_signals": { "name": "Active Security Signals" },
+      "fed_sync_points": { "name": "Federated Sync Points" },
+      "ai_faq_count": { "name": "AI FAQ Requests" },
+      "db_size_mb": { "name": "Database Size" },
+      "event_backlog": { "name": "Event Backlog" },
+      "health_score": { "name": "Health Score" },
+      "events_7d": { "name": "Events (7d)" },
+      "warnings": { "name": "Warnings" }
+    },
+    "binary_sensor": {
+      "status": { "name": "Global Status" },
+      "raid_active": { "name": "Active Raid Detected" },
+      "database_health": { "name": "Database Status" },
+      "whatsapp_connected": { "name": "WhatsApp Bridge Connected" },
+      "group_active": { "name": "Group Active" }
     },
     "switch": {
       "lock_media": { "name": "Lock Media" },
@@ -60,7 +74,9 @@
       "lock_markdown": { "name": "Lock Markdown" }
     },
     "button": {
-      "sync_filters": { "name": "Sync Global Filters" }
+      "sync_filters": { "name": "Sync Global Filters" },
+      "maintenance_vacuum": { "name": "Vacuum Database" },
+      "maintenance_live_test": { "name": "Run Maintenance Live Test" }
     }
   }
 }

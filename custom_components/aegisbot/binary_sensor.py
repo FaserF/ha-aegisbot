@@ -27,6 +27,7 @@ class AegisBotBinarySensorEntityDescription(BinarySensorEntityDescription):
     """Describe an AegisBot binary sensor."""
 
     is_on_fn: Callable[[dict[str, Any]], bool]
+    attributes_fn: Callable[[dict[str, Any]], dict[str, Any]] | None = None
 
 
 class AegisBotBinarySensorEntity(
@@ -47,6 +48,7 @@ class AegisBotBinarySensorEntity(
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
+        self._attr_translation_key = description.key
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name="AegisBot System",
@@ -58,6 +60,13 @@ class AegisBotBinarySensorEntity(
     def is_on(self) -> bool:
         """Return true if the binary sensor is on."""
         return self.entity_description.is_on_fn(self.coordinator.data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra state attributes."""
+        if self.entity_description.attributes_fn:
+            return self.entity_description.attributes_fn(self.coordinator.data)
+        return None
 
 
 class AegisBotGroupBinarySensorEntity(
@@ -80,6 +89,7 @@ class AegisBotGroupBinarySensorEntity(
         self.entity_description = description
         self._group_id = group_id
         self._attr_unique_id = f"{entry.entry_id}_{group_id}_{description.key}"
+        self._attr_translation_key = description.key
 
         group_data = coordinator.data["groups"].get(group_id, {})
         group_title = group_data.get("title", f"Group {group_id}")
@@ -98,39 +108,75 @@ class AegisBotGroupBinarySensorEntity(
         group_data = self.coordinator.data["groups"].get(self._group_id, {})
         return self.entity_description.is_on_fn(group_data)
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra state attributes."""
+        if self.entity_description.attributes_fn:
+            group_data = self.coordinator.data["groups"].get(self._group_id, {})
+            return self.entity_description.attributes_fn(group_data)
+        return None
+
 
 GLOBAL_BINARY_SENSORS: tuple[AegisBotBinarySensorEntityDescription, ...] = (
     AegisBotBinarySensorEntityDescription(
         key="status",
-        name="Global Status",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_category=EntityCategory.DIAGNOSTIC,
-        is_on_fn=lambda data: data["health"].get("status") == "healthy",
+        is_on_fn=lambda data: data.get("health", {}).get("status") == "healthy",
+        attributes_fn=lambda data: {
+            "version": data.get("health", {}).get("version"),
+            "environment": data.get("health", {}).get("environment"),
+        },
     ),
     AegisBotBinarySensorEntityDescription(
         key="raid_active",
-        name="Active Raid Detected",
         device_class=BinarySensorDeviceClass.SAFETY,
-        is_on_fn=lambda data: data["intel"]["stats"].get("active_raids", 0) > 0,
+        is_on_fn=lambda data: (
+            data.get("intel", {}).get("stats", {}).get("active_raids", 0) > 0
+        ),
+        attributes_fn=lambda data: {
+            "raids": data.get("intel", {}).get("stats", {}).get("active_raids", 0),
+        },
     ),
     AegisBotBinarySensorEntityDescription(
         key="database_health",
-        name="Database Status",
         device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         is_on_fn=lambda data: (
-            data["health"].get("infrastructure", {}).get("database") != "healthy"
+            data.get("health", {}).get("infrastructure", {}).get("database")
+            != "healthy"
         ),
+    ),
+    AegisBotBinarySensorEntityDescription(
+        key="whatsapp_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        is_on_fn=lambda data: (
+            data.get("whatsapp", {}).get("status")
+            in ("connected", "ready", "authenticated")
+            or data.get("whatsapp", {}).get("connected") is True
+        ),
+        attributes_fn=lambda data: {
+            "bridge_status": data.get("whatsapp", {}).get("status"),
+            "phone_number": data.get("whatsapp", {}).get("phone_number"),
+            "session_active": data.get("whatsapp", {}).get("session_active"),
+        },
     ),
 )
 
 GROUP_BINARY_SENSORS: tuple[AegisBotBinarySensorEntityDescription, ...] = (
     AegisBotBinarySensorEntityDescription(
         key="group_active",
-        name="Group Active",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        is_on_fn=lambda group: group.get("platform") == "telegram",  # Example logic
+        is_on_fn=lambda group: bool(
+            group.get("platform") or group.get("is_active", True)
+        ),
+        attributes_fn=lambda group: {
+            "platform": group.get("platform"),
+            "type": group.get("type"),
+        },
     ),
 )
 

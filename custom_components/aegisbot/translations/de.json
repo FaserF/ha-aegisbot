@@ -36,7 +36,21 @@
       "protected_groups": { "name": "Geschützte Gruppen" },
       "active_warnings": { "name": "Aktive Warnungen" },
       "malicious_links": { "name": "Blockierte schädliche Links" },
-      "ai_faq_count": { "name": "KI-FAQ-Anfragen" }
+      "active_signals": { "name": "Aktive Sicherheitssignale" },
+      "fed_sync_points": { "name": "Föderierte Synchronisationspunkte" },
+      "ai_faq_count": { "name": "KI-FAQ-Anfragen" },
+      "db_size_mb": { "name": "Datenbankgröße" },
+      "event_backlog": { "name": "Ereignis-Rückstand" },
+      "health_score": { "name": "Gesundheitswert" },
+      "events_7d": { "name": "Ereignisse (7 Tage)" },
+      "warnings": { "name": "Warnungen" }
+    },
+    "binary_sensor": {
+      "status": { "name": "Globaler Status" },
+      "raid_active": { "name": "Aktiver Raid erkannt" },
+      "database_health": { "name": "Datenbankstatus" },
+      "whatsapp_connected": { "name": "WhatsApp-Bridge verbunden" },
+      "group_active": { "name": "Gruppe aktiv" }
     },
     "switch": {
       "lock_media": { "name": "Medien sperren" },
@@ -60,7 +74,9 @@
       "lock_markdown": { "name": "Markdown sperren" }
     },
     "button": {
-      "sync_filters": { "name": "Globale Filter synchronisieren" }
+      "sync_filters": { "name": "Globale Filter synchronisieren" },
+      "maintenance_vacuum": { "name": "Datenbank bereinigen (Vacuum)" },
+      "maintenance_live_test": { "name": "Wartungs-Live-Test ausführen" }
     }
   }
 }

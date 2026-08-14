@@ -36,6 +36,12 @@ async def test_coordinator_update_data(hass, mock_api, mock_config_entry):
             {"group_id": 1, "locks": ["lock1"]}
         ]
         mock_api.async_get_security_intel.return_value = {"data": {"total_alerts": 10}}
+        mock_api.async_get_maintenance_status.return_value = {
+            "data": {"db_size_mb": 20}
+        }
+        mock_api.async_get_whatsapp_status.return_value = {
+            "data": {"status": "connected"}
+        }
 
         data = await coordinator._async_update_data()
 
@@ -44,6 +50,8 @@ async def test_coordinator_update_data(hass, mock_api, mock_config_entry):
         assert data["groups"][1]["title"] == "Test Group"
         assert data["locks"][1] == ["lock1"]
         assert data["intel"] == {"total_alerts": 10}
+        assert data["maintenance"] == {"db_size_mb": 20}
+        assert data["whatsapp"] == {"status": "connected"}
 
 
 async def test_coordinator_update_failed(hass, mock_api, mock_config_entry):

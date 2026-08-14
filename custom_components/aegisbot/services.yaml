@@ -134,3 +134,127 @@ warn_user:
       required: true
       selector:
         text:
+
+broadcast:
+  description: Broadcast a message to all or selected groups across platforms.
+  fields:
+    text:
+      description: The message text to broadcast.
+      example: "Scheduled maintenance in 10 minutes."
+      required: true
+      selector:
+        text:
+    group_ids:
+      description: Optional list of group IDs to restrict the broadcast.
+      example: [-100123456789, -100987654321]
+      required: false
+      selector:
+        object:
+    platform:
+      description: Optional target platform filter (e.g. telegram, whatsapp).
+      example: "telegram"
+      required: false
+      selector:
+        text:
+
+adjust_reputation:
+  description: Adjust a user's reputation score.
+  fields:
+    user_id:
+      description: The ID of the user.
+      example: 12345678
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 999999999999
+    delta:
+      description: Score change (positive or negative).
+      example: -10
+      required: true
+      selector:
+        number:
+          min: -1000
+          max: 1000
+    reason:
+      description: Reason for reputation adjustment.
+      example: "Helpful community response"
+      required: false
+      selector:
+        text:
+    group_id:
+      description: Optional group ID scope.
+      example: -100123456789
+      required: false
+      selector:
+        number:
+          min: -999999999999999
+          max: 999999999999999
+
+apply_preset:
+  description: Apply a pre-configured security preset to a group.
+  fields:
+    group_id:
+      description: The numerical ID of the group.
+      example: -100123456789
+      required: true
+      selector:
+        number:
+          min: -999999999999999
+          max: 999999999999999
+    preset_name:
+      description: Name of the preset (e.g. strict, moderate, relaxed, lockdown).
+      example: "strict"
+      required: true
+      selector:
+        text:
+
+maintenance_cleanup:
+  description: Clean up old event logs and transient data.
+  fields:
+    days:
+      description: Retention period in days (events older than this will be removed).
+      example: 30
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 365
+
+maintenance_purge:
+  description: Purge all stored records and settings for a specific group.
+  fields:
+    group_id:
+      description: The numerical ID of the group to purge.
+      example: -100123456789
+      required: true
+      selector:
+        number:
+          min: -999999999999999
+          max: 999999999999999
+
+mark_notifications_read:
+  description: Mark system notifications as read.
+  fields:
+    notification_ids:
+      description: Optional list of notification IDs to mark as read. If omitted, marks all.
+      example: ["notif_1", "notif_2"]
+      required: false
+      selector:
+        object:
+
+whatsapp_action:
+  description: Trigger an action on the WhatsApp bridge.
+  fields:
+    action:
+      description: Action name (e.g. restart, reconnect, logout, sync).
+      example: "reconnect"
+      required: true
+      selector:
+        text:
+    data:
+      description: Optional additional action parameters.
+      example: {"force": true}
+      required: false
+      selector:
+        object:
