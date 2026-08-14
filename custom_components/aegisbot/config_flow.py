@@ -304,7 +304,6 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
             description_placeholders={"url": url},
         )
 
-
     async def async_step_hassio(
         self, discovery_info: HassioServiceInfo | None = None
     ) -> ConfigFlowResult:

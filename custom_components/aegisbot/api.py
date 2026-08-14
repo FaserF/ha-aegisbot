@@ -164,9 +164,7 @@ class AegisBotApiClient:
             data=data,
         )
 
-    async def async_get_reputation(
-        self, user_id: int, group_id: int
-    ) -> dict[str, Any]:
+    async def async_get_reputation(self, user_id: int, group_id: int) -> dict[str, Any]:
         """Get reputation information for a user."""
         url = f"{self._url}/api/v1/reputation/{group_id}/member/{user_id}"
         return await self._api_wrapper(method="get", url=url)
