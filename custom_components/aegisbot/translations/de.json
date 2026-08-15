@@ -31,6 +31,17 @@
       "already_configured": "Diese AegisBot-Instanz ist bereits konfiguriert."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AegisBot Optionen",
+        "description": "AegisBot-Integrationsoptionen konfigurieren.",
+        "data": {
+          "scan_interval": "Scanintervall (Sekunden)"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "protected_groups": { "name": "Geschützte Gruppen" },

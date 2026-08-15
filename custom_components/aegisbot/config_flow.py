@@ -377,15 +377,11 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         config_entry: ConfigEntry,
     ) -> OptionsFlow:
         """Create the options flow."""
-        return AegisBotOptionsFlowHandler(config_entry)
+        return AegisBotOptionsFlowHandler()
 
 
 class AegisBotOptionsFlowHandler(OptionsFlow):
     """Handle options for AegisBot."""
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
