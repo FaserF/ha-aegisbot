@@ -17,20 +17,20 @@ A professional, modern Home Assistant integration for [**AegisBot**](https://git
 | [🧑‍💻 Development](#-development) | [💖 Credits](#-credits--acknowledgements) | [📄 License](#-license) | |
 
 ### Why use this integration?
-AegisBot is a powerful orchestrator for group management. This integration allows you to bridge the gap between your community management and your smart home/dashboard. You can trigger security lockdowns, monitor threat levels, and get alerted to critical moderation events natively in Home Assistant.
+AegisBot is a powerful system for group management and moderation. This integration allows you to bridge the gap between your community management and your Home Assistant dashboard. You can monitor moderation status, active groups, and get alerted to critical moderation events natively in Home Assistant.
 
 ## ✨ Features
 
 - **Real-time Monitoring**:
-  - **Global Stats**: Total protected groups, active warnings, and malicious links detected across your entire fleet.
-  - **Group Health**: Per-group health scores based on recent activity and threat ratios.
-  - **AI Intelligence**: Monitor the usage and performance of your Gemini-powered FAQ system.
-- **Security Controls**:
-  - **Content Locks**: Toggles for individual group security settings like Media, Links, RTL, Buttons, and Stickers.
+  - **Global Stats**: Total protected groups, active warnings, and blocked spam links across all groups.
+  - **Group Health**: Per-group health scores based on recent activity and moderation ratios.
+  - **AI Assistant**: Monitor the usage and performance of your Gemini-powered FAQ system.
+- **Moderation Controls**:
+  - **Content Locks**: Toggles for individual group settings like Media, Links, RTL, Buttons, and Stickers.
   - **System Status**: Monitor the connectivity and latency of your AegisBot instance and its database.
 - **Administrative Actions**:
   - **Filter Sync**: Manually trigger a synchronization of your global blocklists and filters.
-  - **Federation Sync**: Propagate security settings across your federation in real-time.
+  - **Federation Sync**: Synchronize moderation settings across your federation in real-time.
   - **Group Moderation & Actions**: Perform Telegram actions directly via HA Services (`send_message`, `ban_user`, `mute_user`, `warn_user`, etc.).
 - **Optimized for Reliability**:
   - **DataUpdateCoordinator**: Efficient state polling that respects your server resources.
