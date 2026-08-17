@@ -24,27 +24,35 @@ async def test_webhook_event_dispatch(hass):
     )
     entry.add_to_hass(hass)
 
-    with patch(
-        "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_data",
-        return_value={"status": "healthy"},
-    ), patch(
-        "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_stats",
-        return_value={"data": {}},
-    ), patch(
-        "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_all_locks",
-        return_value=[],
-    ), patch(
-        "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_group_health",
-        return_value=[],
-    ), patch(
-        "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_security_intel",
-        return_value={},
-    ), patch(
-        "custom_components.aegisbot.coordinator.AegisBotApiClient.async_register_ha_webhook",
-        return_value={"success": True},
-    ), patch(
-        "custom_components.aegisbot.coordinator.AegisBotApiClient.async_telegram_get_allowed_chats",
-        return_value=[],
+    with (
+        patch(
+            "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_data",
+            return_value={"status": "healthy"},
+        ),
+        patch(
+            "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_stats",
+            return_value={"data": {}},
+        ),
+        patch(
+            "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_all_locks",
+            return_value=[],
+        ),
+        patch(
+            "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_group_health",
+            return_value=[],
+        ),
+        patch(
+            "custom_components.aegisbot.coordinator.AegisBotApiClient.async_get_security_intel",
+            return_value={},
+        ),
+        patch(
+            "custom_components.aegisbot.coordinator.AegisBotApiClient.async_register_ha_webhook",
+            return_value={"success": True},
+        ),
+        patch(
+            "custom_components.aegisbot.coordinator.AegisBotApiClient.async_telegram_get_allowed_chats",
+            return_value=[],
+        ),
     ):
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -84,7 +92,11 @@ async def test_webhook_event_dispatch(hass):
     mock_request.json = AsyncMock(
         return_value={
             "event_type": EVENT_AEGISBOT_COMMAND,
-            "event_data": {"command": "/meeting", "args": ["tomorrow"], "chat_id": -100123},
+            "event_data": {
+                "command": "/meeting",
+                "args": ["tomorrow"],
+                "chat_id": -100123,
+            },
         }
     )
     resp = await webhook.async_handle_webhook(hass, webhook_id, mock_request)

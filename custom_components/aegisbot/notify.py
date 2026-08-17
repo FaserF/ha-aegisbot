@@ -7,7 +7,6 @@ from typing import Any
 
 from homeassistant.components.notify import (
     ATTR_DATA,
-    ATTR_MESSAGE,
     ATTR_TARGET,
     ATTR_TITLE,
     BaseNotificationService,
@@ -104,7 +103,13 @@ class AegisBotNotificationService(BaseNotificationService):
         for target in targets:
             try:
                 # 1. Photo
-                if "photo" in data or ("url" in data and any(data.get("url", "").endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"])):
+                if "photo" in data or (
+                    "url" in data
+                    and any(
+                        data.get("url", "").endswith(ext)
+                        for ext in [".jpg", ".jpeg", ".png", ".webp"]
+                    )
+                ):
                     photo_url = data.get("photo") or data.get("url")
                     caption = data.get("caption", full_text)
                     await self.api.async_telegram_send_photo(
@@ -166,10 +171,124 @@ class AegisBotNotificationService(BaseNotificationService):
                         message_thread_id=message_thread_id,
                         bot_id=target_bot,
                     )
-                # 5. Location
+                # 5. Voice
+                elif "voice" in data:
+                    await self.api.async_telegram_send_voice(
+                        chat_id=target,
+                        file=data["voice"],
+                        caption=data.get("caption", full_text),
+                        parse_mode=parse_mode,
+                        reply_markup=reply_markup,
+                        inline_keyboard=inline_keyboard,
+                        keyboard=keyboard,
+                        disable_notification=disable_notification,
+                        reply_to_message_id=reply_to_message_id,
+                        message_thread_id=message_thread_id,
+                        bot_id=target_bot,
+                    )
+                # 6. Audio Track
+                elif "audio" in data:
+                    await self.api.async_telegram_send_audio(
+                        chat_id=target,
+                        audio=data["audio"],
+                        caption=data.get("caption", full_text),
+                        parse_mode=parse_mode,
+                        duration=data.get("duration"),
+                        performer=data.get("performer"),
+                        title=data.get("title"),
+                        reply_markup=reply_markup,
+                        inline_keyboard=inline_keyboard,
+                        keyboard=keyboard,
+                        disable_notification=disable_notification,
+                        reply_to_message_id=reply_to_message_id,
+                        message_thread_id=message_thread_id,
+                        bot_id=target_bot,
+                    )
+                # 7. Sticker
+                elif "sticker" in data:
+                    await self.api.async_telegram_send_sticker(
+                        chat_id=target,
+                        sticker=data["sticker"],
+                        reply_markup=reply_markup,
+                        inline_keyboard=inline_keyboard,
+                        keyboard=keyboard,
+                        disable_notification=disable_notification,
+                        reply_to_message_id=reply_to_message_id,
+                        message_thread_id=message_thread_id,
+                        bot_id=target_bot,
+                    )
+                # 8. Video Note (Telescope)
+                elif "video_note" in data:
+                    await self.api.async_telegram_send_video_note(
+                        chat_id=target,
+                        video_note=data["video_note"],
+                        duration=data.get("duration"),
+                        length=data.get("length"),
+                        reply_markup=reply_markup,
+                        inline_keyboard=inline_keyboard,
+                        keyboard=keyboard,
+                        disable_notification=disable_notification,
+                        reply_to_message_id=reply_to_message_id,
+                        message_thread_id=message_thread_id,
+                        bot_id=target_bot,
+                    )
+                # 9. Dice
+                elif "dice" in data:
+                    await self.api.async_telegram_send_dice(
+                        chat_id=target,
+                        emoji=data.get("emoji", data.get("dice", "🎲")),
+                        reply_markup=reply_markup,
+                        inline_keyboard=inline_keyboard,
+                        keyboard=keyboard,
+                        disable_notification=disable_notification,
+                        reply_to_message_id=reply_to_message_id,
+                        message_thread_id=message_thread_id,
+                        bot_id=target_bot,
+                    )
+                # 10. Venue
+                elif "venue" in data:
+                    venue = data["venue"]
+                    await self.api.async_telegram_send_venue(
+                        chat_id=target,
+                        latitude=float(venue["latitude"]),
+                        longitude=float(venue["longitude"]),
+                        title=venue["title"],
+                        address=venue["address"],
+                        foursquare_id=venue.get("foursquare_id"),
+                        google_place_id=venue.get("google_place_id"),
+                        reply_markup=reply_markup,
+                        inline_keyboard=inline_keyboard,
+                        keyboard=keyboard,
+                        disable_notification=disable_notification,
+                        reply_to_message_id=reply_to_message_id,
+                        message_thread_id=message_thread_id,
+                        bot_id=target_bot,
+                    )
+                # 11. Contact
+                elif "contact" in data:
+                    contact = data["contact"]
+                    await self.api.async_telegram_send_contact(
+                        chat_id=target,
+                        phone_number=contact["phone_number"],
+                        first_name=contact["first_name"],
+                        last_name=contact.get("last_name"),
+                        vcard=contact.get("vcard"),
+                        reply_markup=reply_markup,
+                        inline_keyboard=inline_keyboard,
+                        keyboard=keyboard,
+                        disable_notification=disable_notification,
+                        reply_to_message_id=reply_to_message_id,
+                        message_thread_id=message_thread_id,
+                        bot_id=target_bot,
+                    )
+                # 12. Location
                 elif "location" in data or ("latitude" in data and "longitude" in data):
-                    lat = data.get("latitude") or data.get("location", {}).get("latitude")
-                    lon = data.get("longitude") or data.get("location", {}).get("longitude")
+                    lat = data.get("latitude") or data.get("location", {}).get(
+                        "latitude"
+                    )
+                    lon = data.get("longitude") or data.get("location", {}).get(
+                        "longitude"
+                    )
                     await self.api.async_telegram_send_location(
                         chat_id=target,
                         latitude=float(lat),
@@ -182,7 +301,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         message_thread_id=message_thread_id,
                         bot_id=target_bot,
                     )
-                # 6. Poll
+                # 13. Poll
                 elif "poll" in data:
                     poll_cfg = data["poll"]
                     await self.api.async_telegram_send_poll(
@@ -191,7 +310,9 @@ class AegisBotNotificationService(BaseNotificationService):
                         options=poll_cfg.get("options", []),
                         is_anonymous=poll_cfg.get("is_anonymous", True),
                         poll_type=poll_cfg.get("type", "regular"),
-                        allows_multiple_answers=poll_cfg.get("allows_multiple_answers", False),
+                        allows_multiple_answers=poll_cfg.get(
+                            "allows_multiple_answers", False
+                        ),
                         correct_option_id=poll_cfg.get("correct_option_id"),
                         explanation=poll_cfg.get("explanation"),
                         category=poll_cfg.get("category", "general"),
@@ -201,7 +322,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         message_thread_id=message_thread_id,
                         bot_id=target_bot,
                     )
-                # 7. Standard Text Message
+                # 14. Standard Text Message
                 else:
                     await self.api.async_telegram_send_message(
                         chat_id=target,
@@ -216,4 +337,6 @@ class AegisBotNotificationService(BaseNotificationService):
                         bot_id=target_bot,
                     )
             except Exception as err:
-                _LOGGER.error("Failed to deliver AegisBot notification to %s: %s", target, err)
+                _LOGGER.error(
+                    "Failed to deliver AegisBot notification to %s: %s", target, err
+                )

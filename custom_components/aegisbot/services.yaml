@@ -64,6 +64,607 @@ send_message:
       selector:
         text:
 
+leave_chat:
+  description: Make the bot leave a group or channel.
+  fields:
+    target:
+      description: Chat ID to leave.
+      required: false
+      selector:
+        object:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+send_audio:
+  description: Send an audio file / track to one or more Telegram chats.
+  fields:
+    target:
+      description: Numerical ID or list of IDs of Telegram chats/groups.
+      required: false
+      selector:
+        object:
+    file:
+      description: Path, URL, or Telegram file_id of the audio track.
+      example: "/config/media/alert.mp3"
+      required: true
+      selector:
+        text:
+    caption:
+      description: Optional caption text.
+      required: false
+      selector:
+        text:
+    title:
+      description: Track title.
+      required: false
+      selector:
+        text:
+    performer:
+      description: Artist / Performer name.
+      required: false
+      selector:
+        text:
+    duration:
+      description: Duration in seconds.
+      required: false
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+send_sticker:
+  description: Send a sticker to one or more Telegram chats.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    file:
+      description: Path, URL, or Telegram file_id of the sticker (.webp, .tgs, .webm).
+      required: true
+      selector:
+        text:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+send_chat_action:
+  description: Broadcast a chat status action (e.g. typing, upload_photo, record_voice).
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    action:
+      description: Action name (typing, upload_photo, record_video, upload_video, record_voice, upload_voice, upload_document, choose_sticker, find_location).
+      default: typing
+      selector:
+        select:
+          options:
+            - typing
+            - upload_photo
+            - record_video
+            - upload_video
+            - record_voice
+            - upload_voice
+            - upload_document
+            - choose_sticker
+            - find_location
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+send_video_note:
+  description: Send a circular video note (Telescope) to one or more Telegram chats.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    file:
+      description: Path, URL, or Telegram file_id of the square MP4 video.
+      required: true
+      selector:
+        text:
+    duration:
+      description: Duration in seconds.
+      required: false
+      selector:
+        number:
+    length:
+      description: Video diameter/dimension.
+      required: false
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+send_dice:
+  description: Send an animated dice or mini-game (🎲, 🎯, 🏀, ⚽, 🎰, 🎳).
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    emoji:
+      description: Game emoji (🎲, 🎯, 🏀, ⚽, 🎰, 🎳).
+      default: "🎲"
+      selector:
+        text:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+send_venue:
+  description: Send a venue with address and coordinates.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    latitude:
+      description: Latitude coordinate.
+      required: true
+      selector:
+        number:
+          mode: box
+          step: any
+    longitude:
+      description: Longitude coordinate.
+      required: true
+      selector:
+        number:
+          mode: box
+          step: any
+    title:
+      description: Venue title.
+      example: "Home"
+      required: true
+      selector:
+        text:
+    address:
+      description: Full address.
+      example: "Main Street 1, Berlin"
+      required: true
+      selector:
+        text:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+send_contact:
+  description: Send a contact / vCard.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    phone_number:
+      description: Phone number.
+      example: "+491701234567"
+      required: true
+      selector:
+        text:
+    first_name:
+      description: First name.
+      required: true
+      selector:
+        text:
+    last_name:
+      description: Last name.
+      required: false
+      selector:
+        text:
+    vcard:
+      description: Optional vCard string.
+      required: false
+      selector:
+        text:
+          multiline: true
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+edit_message_media:
+  description: Update the photo/video of an existing message in-place (ideal for live camera feeds).
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID to edit.
+      required: true
+      selector:
+        number:
+    file:
+      description: New photo, video, or animation URL/path.
+      required: true
+      selector:
+        text:
+    media_type:
+      description: Media type (photo, video, animation, document).
+      default: photo
+      selector:
+        select:
+          options:
+            - photo
+            - video
+            - animation
+            - document
+    caption:
+      description: Updated caption.
+      required: false
+      selector:
+        text:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+edit_live_location:
+  description: Update live location coordinates in-place.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Live location message ID.
+      required: true
+      selector:
+        number:
+    latitude:
+      description: New latitude.
+      required: true
+      selector:
+        number:
+          mode: box
+          step: any
+    longitude:
+      description: New longitude.
+      required: true
+      selector:
+        number:
+          mode: box
+          step: any
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+stop_live_location:
+  description: Stop live location transmission.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Live location message ID to stop.
+      required: true
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+set_message_reaction:
+  description: Set an emoji reaction on a message.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID to react to.
+      required: true
+      selector:
+        number:
+    reaction:
+      description: Emoji reaction (e.g. 👍, ❤️, 🔥, 🎉).
+      default: "👍"
+      selector:
+        text:
+    is_big:
+      description: Show large reaction animation.
+      default: false
+      selector:
+        boolean:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+forward_message:
+  description: Forward a message from one chat to another.
+  fields:
+    target:
+      description: Destination chat ID.
+      required: false
+      selector:
+        object:
+    from_chat_id:
+      description: Source chat ID where the message originates.
+      required: true
+      selector:
+        object:
+    message_id:
+      description: Message ID to forward.
+      required: true
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+copy_message:
+  description: Copy a message to another chat without a forwarded header.
+  fields:
+    target:
+      description: Destination chat ID.
+      required: false
+      selector:
+        object:
+    from_chat_id:
+      description: Source chat ID where the message originates.
+      required: true
+      selector:
+        object:
+    message_id:
+      description: Message ID to copy.
+      required: true
+      selector:
+        number:
+    caption:
+      description: Optional replacement caption.
+      required: false
+      selector:
+        text:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+pin_message:
+  description: Pin a message to the top of a chat.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID to pin.
+      required: true
+      selector:
+        number:
+    disable_notification:
+      description: Pin silently without notifying chat members.
+      default: false
+      selector:
+        boolean:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+unpin_message:
+  description: Unpin a specific message or latest pinned message.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID to unpin (omit to unpin latest).
+      required: false
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+unpin_all_messages:
+  description: Unpin all messages in a chat.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+create_forum_topic:
+  description: Create a new topic in a forum supergroup.
+  fields:
+    target:
+      description: Supergroup chat ID.
+      required: false
+      selector:
+        object:
+    name:
+      description: Topic name.
+      example: "Security Incidents"
+      required: true
+      selector:
+        text:
+    icon_color:
+      description: Color integer for topic icon.
+      required: false
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+edit_forum_topic:
+  description: Rename or update icon of a forum topic.
+  fields:
+    target:
+      description: Supergroup chat ID.
+      required: false
+      selector:
+        object:
+    message_thread_id:
+      description: Topic thread ID.
+      required: true
+      selector:
+        number:
+    name:
+      description: New topic name.
+      required: false
+      selector:
+        text:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+close_forum_topic:
+  description: Close a forum topic.
+  fields:
+    target:
+      description: Supergroup chat ID.
+      required: false
+      selector:
+        object:
+    message_thread_id:
+      description: Topic thread ID.
+      required: true
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+reopen_forum_topic:
+  description: Reopen a closed forum topic.
+  fields:
+    target:
+      description: Supergroup chat ID.
+      required: false
+      selector:
+        object:
+    message_thread_id:
+      description: Topic thread ID.
+      required: true
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+delete_forum_topic:
+  description: Delete a forum topic and its messages.
+  fields:
+    target:
+      description: Supergroup chat ID.
+      required: false
+      selector:
+        object:
+    message_thread_id:
+      description: Topic thread ID.
+      required: true
+      selector:
+        number:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+set_chat_title:
+  description: Change the title of a chat or group.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    title:
+      description: New chat title.
+      required: true
+      selector:
+        text:
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
+set_chat_description:
+  description: Change the description of a chat or group.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    description:
+      description: New chat description.
+      required: true
+      selector:
+        text:
+          multiline: true
+    bot:
+      description: Optional Bot ID or Username.
+      required: false
+      selector:
+        text:
+
 send_photo:
   description: Send a photo to one or more Telegram chats.
   fields:

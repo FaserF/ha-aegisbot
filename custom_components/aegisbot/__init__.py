@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
+
 from aiohttp import web
 from homeassistant.components import webhook
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
-from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
+from homeassistant.const import Platform
+from homeassistant.core import Event, HomeAssistant, ServiceCall
 from homeassistant.helpers.discovery import async_load_platform
 
 from .const import (
@@ -17,19 +17,12 @@ from .const import (
     CONF_AUTO_SYNC_COMMANDS,
     CONF_BOT,
     CONF_BOT_ID,
-    CONF_CHAT_ID,
     CONF_DEFAULT_BOT_ID,
     CONF_ENABLE_TELEGRAM_PROXY,
     CONF_IGNORED_COMMANDS,
     CONF_WEBHOOK_ID,
     DOMAIN,
-    EVENT_AEGISBOT_CALLBACK,
-    EVENT_AEGISBOT_COMMAND,
-    EVENT_AEGISBOT_POLL_ANSWER,
-    EVENT_AEGISBOT_POLL_RESULT,
-    EVENT_AEGISBOT_POLL_UPDATE,
     EVENT_AEGISBOT_TEXT,
-    LOGGER,
 )
 from .coordinator import AegisBotDataCoordinator
 
@@ -125,7 +118,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Sync Webhook & Allowed Chats to AegisBot in background
     async def _sync_with_aegisbot() -> None:
         try:
-            ha_url = str(hass.config.api.base_url) if hasattr(hass.config, "api") and hasattr(hass.config.api, "base_url") else None
+            api_conf = getattr(hass.config, "api", None)
+            ha_url = (
+                str(api_conf.base_url)
+                if api_conf and hasattr(api_conf, "base_url")
+                else None
+            )
             await coordinator.api.async_register_ha_webhook(
                 webhook_id=webhook_id,
                 ha_url=ha_url,
@@ -183,9 +181,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         ev_data = trig.get("event_data") or {}
                         cmd = ev_data.get("command")
                         if cmd:
-                            clean_cmd = str(cmd).lstrip("/").split("@")[0].strip().lower()
-                            if clean_cmd and clean_cmd not in ignored_set and clean_cmd not in discovered_commands:
-                                discovered_commands[clean_cmd] = alias or f"Command /{clean_cmd}"
+                            clean_cmd = (
+                                str(cmd).lstrip("/").split("@")[0].strip().lower()
+                            )
+                            if (
+                                clean_cmd
+                                and clean_cmd not in ignored_set
+                                and clean_cmd not in discovered_commands
+                            ):
+                                discovered_commands[clean_cmd] = (
+                                    alias or f"Command /{clean_cmd}"
+                                )
 
         # 2. Inspect entity states for automations
         for state in hass.states.async_all("automation"):
@@ -193,12 +199,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # If trigger metadata is attached in attributes
             extra_triggers = state.attributes.get("triggers") or []
             for trig in extra_triggers:
-                if isinstance(trig, dict) and trig.get("event_type") in ("aegisbot_command", "telegram_command"):
+                if isinstance(trig, dict) and trig.get("event_type") in (
+                    "aegisbot_command",
+                    "telegram_command",
+                ):
                     ev_data = trig.get("event_data") or {}
                     cmd = ev_data.get("command")
                     if cmd:
                         clean_cmd = str(cmd).lstrip("/").split("@")[0].strip().lower()
-                        if clean_cmd and clean_cmd not in ignored_set and clean_cmd not in discovered_commands:
+                        if (
+                            clean_cmd
+                            and clean_cmd not in ignored_set
+                            and clean_cmd not in discovered_commands
+                        ):
                             discovered_commands[clean_cmd] = desc
 
         if discovered_commands:
@@ -263,12 +276,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
             data = call.data.get("data") or {}
             parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
             keyboard = call.data.get("keyboard") or data.get("keyboard")
             reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
             bot = _resolve_bot(call)
 
             for t in targets:
@@ -288,16 +309,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async def handle_send_photo(call: ServiceCall) -> None:
             """Handle send_photo (1:1 Telegram compatible)."""
             targets = _resolve_target(call)
-            file_path = call.data.get("file") or call.data.get("url") or call.data.get("photo")
-            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            file_path = (
+                call.data.get("file") or call.data.get("url") or call.data.get("photo")
+            )
+            caption = (
+                call.data.get("caption")
+                or call.data.get("message")
+                or call.data.get("text")
+            )
             data = call.data.get("data") or {}
             parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
             keyboard = call.data.get("keyboard") or data.get("keyboard")
             reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
             bot = _resolve_bot(call)
 
             for t in targets:
@@ -318,16 +353,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async def handle_send_video(call: ServiceCall) -> None:
             """Handle send_video (1:1 Telegram compatible)."""
             targets = _resolve_target(call)
-            file_path = call.data.get("file") or call.data.get("video") or call.data.get("url")
-            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            file_path = (
+                call.data.get("file") or call.data.get("video") or call.data.get("url")
+            )
+            caption = (
+                call.data.get("caption")
+                or call.data.get("message")
+                or call.data.get("text")
+            )
             data = call.data.get("data") or {}
             parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
             keyboard = call.data.get("keyboard") or data.get("keyboard")
             reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
             bot = _resolve_bot(call)
 
             for t in targets:
@@ -348,16 +397,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async def handle_send_document(call: ServiceCall) -> None:
             """Handle send_document (1:1 Telegram compatible)."""
             targets = _resolve_target(call)
-            file_path = call.data.get("file") or call.data.get("document") or call.data.get("url")
-            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            file_path = (
+                call.data.get("file")
+                or call.data.get("document")
+                or call.data.get("url")
+            )
+            caption = (
+                call.data.get("caption")
+                or call.data.get("message")
+                or call.data.get("text")
+            )
             data = call.data.get("data") or {}
             parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
             keyboard = call.data.get("keyboard") or data.get("keyboard")
             reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
             bot = _resolve_bot(call)
 
             for t in targets:
@@ -378,16 +443,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async def handle_send_animation(call: ServiceCall) -> None:
             """Handle send_animation (1:1 Telegram compatible)."""
             targets = _resolve_target(call)
-            file_path = call.data.get("file") or call.data.get("animation") or call.data.get("url")
-            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            file_path = (
+                call.data.get("file")
+                or call.data.get("animation")
+                or call.data.get("url")
+            )
+            caption = (
+                call.data.get("caption")
+                or call.data.get("message")
+                or call.data.get("text")
+            )
             data = call.data.get("data") or {}
             parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
             keyboard = call.data.get("keyboard") or data.get("keyboard")
             reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
             bot = _resolve_bot(call)
 
             for t in targets:
@@ -408,16 +489,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async def handle_send_voice(call: ServiceCall) -> None:
             """Handle send_voice (1:1 Telegram compatible)."""
             targets = _resolve_target(call)
-            file_path = call.data.get("file") or call.data.get("voice") or call.data.get("url")
-            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            file_path = (
+                call.data.get("file") or call.data.get("voice") or call.data.get("url")
+            )
+            caption = (
+                call.data.get("caption")
+                or call.data.get("message")
+                or call.data.get("text")
+            )
             data = call.data.get("data") or {}
             parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
             keyboard = call.data.get("keyboard") or data.get("keyboard")
             reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
             bot = _resolve_bot(call)
 
             for t in targets:
@@ -505,7 +600,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             bot = _resolve_bot(call)
             for t in targets:
                 await coordinator.api.async_telegram_stop_poll(
-                    chat_id=t, message_id=message_id, reply_markup=reply_markup, bot_id=bot
+                    chat_id=t,
+                    message_id=message_id,
+                    reply_markup=reply_markup,
+                    bot_id=bot,
                 )
 
         async def handle_edit_message(call: ServiceCall) -> None:
@@ -594,6 +692,527 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 bot_id=bot,
             )
 
+        async def handle_send_audio(call: ServiceCall) -> None:
+            """Handle send_audio service call."""
+            targets = _resolve_target(call)
+            audio = (
+                call.data.get("file") or call.data.get("url") or call.data.get("audio")
+            )
+            caption = (
+                call.data.get("caption")
+                or call.data.get("message")
+                or call.data.get("text")
+            )
+            data = call.data.get("data") or {}
+            parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
+            duration = call.data.get("duration") or data.get("duration")
+            performer = call.data.get("performer") or data.get("performer")
+            title = call.data.get("title") or data.get("title")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_audio(
+                    chat_id=t,
+                    audio=audio,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    duration=duration,
+                    performer=performer,
+                    title=title,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_sticker(call: ServiceCall) -> None:
+            """Handle send_sticker service call."""
+            targets = _resolve_target(call)
+            sticker = (
+                call.data.get("file")
+                or call.data.get("url")
+                or call.data.get("sticker")
+            )
+            data = call.data.get("data") or {}
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_sticker(
+                    chat_id=t,
+                    sticker=sticker,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_chat_action(call: ServiceCall) -> None:
+            """Handle send_chat_action / send_action service call."""
+            targets = _resolve_target(call)
+            action = call.data.get("action", "typing")
+            data = call.data.get("data") or {}
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_chat_action(
+                    chat_id=t,
+                    action=action,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_video_note(call: ServiceCall) -> None:
+            """Handle send_video_note service call."""
+            targets = _resolve_target(call)
+            video_note = (
+                call.data.get("file")
+                or call.data.get("url")
+                or call.data.get("video_note")
+            )
+            data = call.data.get("data") or {}
+            duration = call.data.get("duration") or data.get("duration")
+            length = call.data.get("length") or data.get("length")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_video_note(
+                    chat_id=t,
+                    video_note=video_note,
+                    duration=duration,
+                    length=length,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_dice(call: ServiceCall) -> None:
+            """Handle send_dice service call."""
+            targets = _resolve_target(call)
+            emoji = call.data.get("emoji", "🎲")
+            data = call.data.get("data") or {}
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_dice(
+                    chat_id=t,
+                    emoji=emoji,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_venue(call: ServiceCall) -> None:
+            """Handle send_venue service call."""
+            targets = _resolve_target(call)
+            latitude = float(call.data["latitude"])
+            longitude = float(call.data["longitude"])
+            title = call.data["title"]
+            address = call.data["address"]
+            foursquare_id = call.data.get("foursquare_id")
+            google_place_id = call.data.get("google_place_id")
+            data = call.data.get("data") or {}
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_venue(
+                    chat_id=t,
+                    latitude=latitude,
+                    longitude=longitude,
+                    title=title,
+                    address=address,
+                    foursquare_id=foursquare_id,
+                    google_place_id=google_place_id,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_contact(call: ServiceCall) -> None:
+            """Handle send_contact service call."""
+            targets = _resolve_target(call)
+            phone_number = call.data["phone_number"]
+            first_name = call.data["first_name"]
+            last_name = call.data.get("last_name")
+            vcard = call.data.get("vcard")
+            data = call.data.get("data") or {}
+            inline_keyboard = call.data.get("inline_keyboard") or data.get(
+                "inline_keyboard"
+            )
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get(
+                "disable_notification", data.get("disable_notification", False)
+            )
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get(
+                "reply_to_message_id"
+            )
+            message_thread_id = call.data.get("message_thread_id") or data.get(
+                "message_thread_id"
+            )
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_contact(
+                    chat_id=t,
+                    phone_number=phone_number,
+                    first_name=first_name,
+                    last_name=last_name,
+                    vcard=vcard,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_edit_message_media(call: ServiceCall) -> None:
+            """Handle edit_message_media service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            media = (
+                call.data.get("file") or call.data.get("url") or call.data.get("media")
+            )
+            media_type = call.data.get("media_type", "photo")
+            caption = call.data.get("caption") or call.data.get("message")
+            parse_mode = call.data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard")
+            reply_markup = call.data.get("reply_markup")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_edit_message_media(
+                    chat_id=t,
+                    message_id=message_id,
+                    media=media,
+                    media_type=media_type,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    bot_id=bot,
+                )
+
+        async def handle_edit_live_location(call: ServiceCall) -> None:
+            """Handle edit_live_location service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            latitude = float(call.data["latitude"])
+            longitude = float(call.data["longitude"])
+            inline_keyboard = call.data.get("inline_keyboard")
+            reply_markup = call.data.get("reply_markup")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_edit_live_location(
+                    chat_id=t,
+                    message_id=message_id,
+                    latitude=latitude,
+                    longitude=longitude,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    bot_id=bot,
+                )
+
+        async def handle_stop_live_location(call: ServiceCall) -> None:
+            """Handle stop_live_location service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            inline_keyboard = call.data.get("inline_keyboard")
+            reply_markup = call.data.get("reply_markup")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_stop_live_location(
+                    chat_id=t,
+                    message_id=message_id,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    bot_id=bot,
+                )
+
+        async def handle_set_message_reaction(call: ServiceCall) -> None:
+            """Handle set_message_reaction service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            reaction = call.data.get("reaction", "👍")
+            is_big = call.data.get("is_big", False)
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_set_message_reaction(
+                    chat_id=t,
+                    message_id=message_id,
+                    reaction=reaction,
+                    is_big=is_big,
+                    bot_id=bot,
+                )
+
+        async def handle_forward_message(call: ServiceCall) -> None:
+            """Handle forward_message service call."""
+            targets = _resolve_target(call)
+            from_chat_id = call.data["from_chat_id"]
+            message_id = call.data["message_id"]
+            disable_notification = call.data.get("disable_notification", False)
+            message_thread_id = call.data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_forward_message(
+                    chat_id=t,
+                    from_chat_id=from_chat_id,
+                    message_id=message_id,
+                    disable_notification=disable_notification,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_copy_message(call: ServiceCall) -> None:
+            """Handle copy_message service call."""
+            targets = _resolve_target(call)
+            from_chat_id = call.data["from_chat_id"]
+            message_id = call.data["message_id"]
+            caption = call.data.get("caption") or call.data.get("message")
+            parse_mode = call.data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard")
+            keyboard = call.data.get("keyboard")
+            reply_markup = call.data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", False)
+            message_thread_id = call.data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_copy_message(
+                    chat_id=t,
+                    from_chat_id=from_chat_id,
+                    message_id=message_id,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_pin_message(call: ServiceCall) -> None:
+            """Handle pin_message service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            disable_notification = call.data.get("disable_notification", False)
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_pin_message(
+                    chat_id=t,
+                    message_id=message_id,
+                    disable_notification=disable_notification,
+                    bot_id=bot,
+                )
+
+        async def handle_unpin_message(call: ServiceCall) -> None:
+            """Handle unpin_message service call."""
+            targets = _resolve_target(call)
+            message_id = call.data.get("message_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_unpin_message(
+                    chat_id=t, message_id=message_id, bot_id=bot
+                )
+
+        async def handle_unpin_all_messages(call: ServiceCall) -> None:
+            """Handle unpin_all_messages service call."""
+            targets = _resolve_target(call)
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_unpin_all_messages(
+                    chat_id=t, bot_id=bot
+                )
+
+        async def handle_create_forum_topic(call: ServiceCall) -> None:
+            """Handle create_forum_topic service call."""
+            targets = _resolve_target(call)
+            name = call.data["name"]
+            icon_color = call.data.get("icon_color")
+            icon_custom_emoji_id = call.data.get("icon_custom_emoji_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_create_forum_topic(
+                    chat_id=t,
+                    name=name,
+                    icon_color=icon_color,
+                    icon_custom_emoji_id=icon_custom_emoji_id,
+                    bot_id=bot,
+                )
+
+        async def handle_edit_forum_topic(call: ServiceCall) -> None:
+            """Handle edit_forum_topic service call."""
+            targets = _resolve_target(call)
+            message_thread_id = call.data["message_thread_id"]
+            name = call.data.get("name")
+            icon_custom_emoji_id = call.data.get("icon_custom_emoji_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_edit_forum_topic(
+                    chat_id=t,
+                    message_thread_id=message_thread_id,
+                    name=name,
+                    icon_custom_emoji_id=icon_custom_emoji_id,
+                    bot_id=bot,
+                )
+
+        async def handle_close_forum_topic(call: ServiceCall) -> None:
+            """Handle close_forum_topic service call."""
+            targets = _resolve_target(call)
+            message_thread_id = call.data["message_thread_id"]
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_close_forum_topic(
+                    chat_id=t, message_thread_id=message_thread_id, bot_id=bot
+                )
+
+        async def handle_reopen_forum_topic(call: ServiceCall) -> None:
+            """Handle reopen_forum_topic service call."""
+            targets = _resolve_target(call)
+            message_thread_id = call.data["message_thread_id"]
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_reopen_forum_topic(
+                    chat_id=t, message_thread_id=message_thread_id, bot_id=bot
+                )
+
+        async def handle_delete_forum_topic(call: ServiceCall) -> None:
+            """Handle delete_forum_topic service call."""
+            targets = _resolve_target(call)
+            message_thread_id = call.data["message_thread_id"]
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_delete_forum_topic(
+                    chat_id=t, message_thread_id=message_thread_id, bot_id=bot
+                )
+
+        async def handle_set_chat_title(call: ServiceCall) -> None:
+            """Handle set_chat_title service call."""
+            targets = _resolve_target(call)
+            title = call.data["title"]
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_set_chat_title(
+                    chat_id=t, title=title, bot_id=bot
+                )
+
+        async def handle_set_chat_description(call: ServiceCall) -> None:
+            """Handle set_chat_description service call."""
+            targets = _resolve_target(call)
+            description = call.data["description"]
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_set_chat_description(
+                    chat_id=t, description=description, bot_id=bot
+                )
+
         async def handle_leave_chat(call: ServiceCall) -> None:
             """Handle leave_chat service call."""
             targets = _resolve_target(call)
@@ -607,14 +1226,65 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.services.async_register(DOMAIN, "send_document", handle_send_document)
         hass.services.async_register(DOMAIN, "send_animation", handle_send_animation)
         hass.services.async_register(DOMAIN, "send_voice", handle_send_voice)
+        hass.services.async_register(DOMAIN, "send_audio", handle_send_audio)
+        hass.services.async_register(DOMAIN, "send_sticker", handle_send_sticker)
+        hass.services.async_register(
+            DOMAIN, "send_chat_action", handle_send_chat_action
+        )
+        hass.services.async_register(DOMAIN, "send_video_note", handle_send_video_note)
+        hass.services.async_register(DOMAIN, "send_dice", handle_send_dice)
         hass.services.async_register(DOMAIN, "send_location", handle_send_location)
+        hass.services.async_register(DOMAIN, "send_venue", handle_send_venue)
+        hass.services.async_register(DOMAIN, "send_contact", handle_send_contact)
         hass.services.async_register(DOMAIN, "send_poll", handle_send_poll)
         hass.services.async_register(DOMAIN, "stop_poll", handle_stop_poll)
         hass.services.async_register(DOMAIN, "edit_message", handle_edit_message)
         hass.services.async_register(DOMAIN, "edit_caption", handle_edit_caption)
-        hass.services.async_register(DOMAIN, "edit_replymarkup", handle_edit_replymarkup)
+        hass.services.async_register(
+            DOMAIN, "edit_replymarkup", handle_edit_replymarkup
+        )
+        hass.services.async_register(
+            DOMAIN, "edit_message_media", handle_edit_message_media
+        )
+        hass.services.async_register(
+            DOMAIN, "edit_live_location", handle_edit_live_location
+        )
+        hass.services.async_register(
+            DOMAIN, "stop_live_location", handle_stop_live_location
+        )
+        hass.services.async_register(
+            DOMAIN, "set_message_reaction", handle_set_message_reaction
+        )
+        hass.services.async_register(DOMAIN, "forward_message", handle_forward_message)
+        hass.services.async_register(DOMAIN, "copy_message", handle_copy_message)
+        hass.services.async_register(DOMAIN, "pin_message", handle_pin_message)
+        hass.services.async_register(DOMAIN, "unpin_message", handle_unpin_message)
+        hass.services.async_register(
+            DOMAIN, "unpin_all_messages", handle_unpin_all_messages
+        )
+        hass.services.async_register(
+            DOMAIN, "create_forum_topic", handle_create_forum_topic
+        )
+        hass.services.async_register(
+            DOMAIN, "edit_forum_topic", handle_edit_forum_topic
+        )
+        hass.services.async_register(
+            DOMAIN, "close_forum_topic", handle_close_forum_topic
+        )
+        hass.services.async_register(
+            DOMAIN, "reopen_forum_topic", handle_reopen_forum_topic
+        )
+        hass.services.async_register(
+            DOMAIN, "delete_forum_topic", handle_delete_forum_topic
+        )
+        hass.services.async_register(DOMAIN, "set_chat_title", handle_set_chat_title)
+        hass.services.async_register(
+            DOMAIN, "set_chat_description", handle_set_chat_description
+        )
         hass.services.async_register(DOMAIN, "delete_message", handle_delete_message)
-        hass.services.async_register(DOMAIN, "answer_callback_query", handle_answer_callback_query)
+        hass.services.async_register(
+            DOMAIN, "answer_callback_query", handle_answer_callback_query
+        )
         hass.services.async_register(DOMAIN, "leave_chat", handle_leave_chat)
 
     # Legacy & Bot Administration Services
@@ -711,11 +1381,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(DOMAIN, "adjust_reputation", handle_adjust_reputation)
     hass.services.async_register(DOMAIN, "apply_preset", handle_apply_preset)
     hass.services.async_register(DOMAIN, "sync_filters", handle_sync_filters)
-    hass.services.async_register(DOMAIN, "maintenance_vacuum", handle_maintenance_vacuum)
-    hass.services.async_register(DOMAIN, "maintenance_cleanup", handle_maintenance_cleanup)
+    hass.services.async_register(
+        DOMAIN, "maintenance_vacuum", handle_maintenance_vacuum
+    )
+    hass.services.async_register(
+        DOMAIN, "maintenance_cleanup", handle_maintenance_cleanup
+    )
     hass.services.async_register(DOMAIN, "maintenance_purge", handle_maintenance_purge)
-    hass.services.async_register(DOMAIN, "maintenance_live_test", handle_maintenance_live_test)
-    hass.services.async_register(DOMAIN, "mark_notifications_read", handle_mark_notifications_read)
+    hass.services.async_register(
+        DOMAIN, "maintenance_live_test", handle_maintenance_live_test
+    )
+    hass.services.async_register(
+        DOMAIN, "mark_notifications_read", handle_mark_notifications_read
+    )
     hass.services.async_register(DOMAIN, "whatsapp_action", handle_whatsapp_action)
 
     return True

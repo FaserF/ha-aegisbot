@@ -111,6 +111,7 @@ async def test_flow_zeroconf_discovery(hass, mock_api):
 async def test_options_flow(hass):
     """Test options flow for AegisBot."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.aegisbot.const import (
         CONF_ALLOWED_CHAT_IDS,
         CONF_AUTO_SYNC_COMMANDS,
@@ -148,5 +149,3 @@ async def test_options_flow(hass):
     assert result2["data"][CONF_DEFAULT_BOT_ID] == "MainBot"
     assert result2["data"][CONF_IGNORED_COMMANDS] == "secret_cmd, admin_only"
     assert result2["data"][CONF_ALLOWED_CHAT_IDS] == "-100789, -100999"
-
-

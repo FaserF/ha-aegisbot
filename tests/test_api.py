@@ -212,7 +212,9 @@ async def test_api_telegram_methods(hass, aioclient_mock):
     msg_res = await api.async_telegram_send_message(-1001, "Hello from HA", bot_id=1)
     assert msg_res["success"] is True
 
-    photo_res = await api.async_telegram_send_photo(-1001, "http://img.jpg", bot_id="BotOne")
+    photo_res = await api.async_telegram_send_photo(
+        -1001, "http://img.jpg", bot_id="BotOne"
+    )
     assert photo_res["success"] is True
 
     poll_res = await api.async_telegram_send_poll(-1001, "Vote", ["A", "B"])
@@ -228,7 +230,8 @@ async def test_api_telegram_methods(hass, aioclient_mock):
     assert len(bots_res) == 1
     assert bots_res[0]["username"] == "BotOne"
 
-    sync_res = await api.async_sync_commands([{"command": "test", "description": "Test command"}])
+    sync_res = await api.async_sync_commands(
+        [{"command": "test", "description": "Test command"}]
+    )
     assert sync_res["success"] is True
     assert sync_res["count"] == 2
-
