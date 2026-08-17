@@ -50,7 +50,7 @@ from .api import (
     AegisBotApiClientCommunicationError,
     AegisBotApiClientError,
 )
-from .const import CONF_API_KEY, DOMAIN, LOGGER
+from .const import CONF_ALLOWED_CHAT_IDS, CONF_API_KEY, DOMAIN, LOGGER
 
 DEFAULT_PORT = 8077
 ADDON_STABLE_SLUG = "edfe50eb_aegisbot"
@@ -61,6 +61,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_URL): str,
         vol.Required(CONF_API_KEY): str,
+        vol.Optional(CONF_ALLOWED_CHAT_IDS): str,
     }
 )
 
@@ -157,7 +158,10 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the initial step."""
-        is_hassio_env = "hassio" in getattr(self.hass.config, "components", set())
+        is_hassio_env = (
+            "hassio" in getattr(self.hass.config, "components", set())
+            and "hassio" in self.hass.data
+        )
 
         if (
             user_input is None
@@ -388,7 +392,25 @@ class AegisBotOptionsFlowHandler(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
+            # Sync allowed chat IDs with backend if configured
+            coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+            if coordinator and CONF_ALLOWED_CHAT_IDS in user_input:
+                raw_chats = user_input[CONF_ALLOWED_CHAT_IDS]
+                chat_list = (
+                    [x.strip() for x in raw_chats.split(",") if x.strip()]
+                    if isinstance(raw_chats, str)
+                    else raw_chats
+                )
+                self.hass.async_create_task(
+                    coordinator.api.async_telegram_set_allowed_chats(chat_list)
+                )
             return self.async_create_entry(title="", data=user_input)
+
+        current_allowed = self.config_entry.options.get(
+            CONF_ALLOWED_CHAT_IDS, self.config_entry.data.get(CONF_ALLOWED_CHAT_IDS, "")
+        )
+        if isinstance(current_allowed, list):
+            current_allowed = ", ".join(str(x) for x in current_allowed)
 
         return self.async_show_form(
             step_id="init",
@@ -398,6 +420,10 @@ class AegisBotOptionsFlowHandler(OptionsFlow):
                         "scan_interval",
                         default=self.config_entry.options.get("scan_interval", 30),
                     ): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
+                    vol.Optional(
+                        CONF_ALLOWED_CHAT_IDS,
+                        default=current_allowed,
+                    ): str,
                 }
             ),
         )

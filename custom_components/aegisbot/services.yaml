@@ -1,29 +1,360 @@
 send_message:
-  description: Send a message to a Telegram group via AegisBot.
+  description: Send a text message to one or more Telegram chats (1:1 Telegram compatible).
   fields:
-    group_id:
-      description: The numerical ID of the Telegram group.
+    target:
+      description: Numerical ID or list of IDs of Telegram chats/groups.
       example: -100123456789
-      required: true
+      required: false
       selector:
-        number:
-          mode: box
-          min: -999999999999999
-          max: 999999999999999
-    text:
+        object:
+    message:
       description: The message text to send.
       example: "Alert: Security breach detected!"
       required: true
       selector:
         text:
-    message_thread_id:
-      description: The ID of the message thread (topic) to send to.
-      example: 12
+          multiline: true
+    title:
+      description: Optional message title (bold header).
+      example: "AegisBot Alert"
+      required: false
+      selector:
+        text:
+    parse_mode:
+      description: Formatting parser (HTML or markdown).
+      default: html
+      selector:
+        select:
+          options:
+            - html
+            - markdown
+    disable_notification:
+      description: Send message silently without sound/vibration.
+      default: false
+      selector:
+        boolean:
+    inline_keyboard:
+      description: Inline button rows for interactive callback queries.
+      example: "[['Turn On:ha_light_on', 'Turn Off:ha_light_off']]"
+      required: false
+      selector:
+        object:
+    keyboard:
+      description: Custom reply keyboard options.
+      example: "[['Option 1', 'Option 2']]"
+      required: false
+      selector:
+        object:
+    reply_to_message_id:
+      description: ID of message to reply to.
+      example: 12345
       required: false
       selector:
         number:
-          min: 1
-          max: 999999999
+    message_thread_id:
+      description: Topic/thread ID for forum supergroups.
+      example: 42
+      required: false
+      selector:
+        number:
+
+send_photo:
+  description: Send a photo to one or more Telegram chats.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    file:
+      description: Path, URL, or Telegram file_id of the photo.
+      example: "/config/www/snapshot.jpg"
+      required: true
+      selector:
+        text:
+    caption:
+      description: Optional photo caption.
+      example: "Front door motion detected"
+      required: false
+      selector:
+        text:
+    parse_mode:
+      description: Caption format mode.
+      default: html
+      selector:
+        select:
+          options:
+            - html
+            - markdown
+    inline_keyboard:
+      description: Interactive button rows attached below the photo.
+      required: false
+      selector:
+        object:
+
+send_video:
+  description: Send a video clip to one or more Telegram chats.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    file:
+      description: Path, URL, or file_id of the video.
+      example: "/config/www/security_clip.mp4"
+      required: true
+      selector:
+        text:
+    caption:
+      description: Optional caption text.
+      required: false
+      selector:
+        text:
+
+send_document:
+  description: Send a document/file to one or more Telegram chats.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    file:
+      description: Path, URL, or file_id of the document.
+      example: "/config/backups/backup_summary.pdf"
+      required: true
+      selector:
+        text:
+    caption:
+      description: Optional document caption.
+      required: false
+      selector:
+        text:
+
+send_animation:
+  description: Send an animation/GIF to one or more Telegram chats.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    file:
+      description: Path, URL, or file_id of the animation GIF.
+      example: "https://example.com/celebration.gif"
+      required: true
+      selector:
+        text:
+    caption:
+      description: Optional caption.
+      required: false
+      selector:
+        text:
+
+send_voice:
+  description: Send a voice audio recording to Telegram chats.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    file:
+      description: Path, URL, or file_id of the audio clip.
+      example: "/config/tts/alarm.ogg"
+      required: true
+      selector:
+        text:
+    caption:
+      description: Optional caption.
+      required: false
+      selector:
+        text:
+
+send_location:
+  description: Send geographic coordinates (location) to Telegram chats.
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    latitude:
+      description: Latitude coordinate.
+      example: 48.137154
+      required: true
+      selector:
+        number:
+          step: 0.000001
+    longitude:
+      description: Longitude coordinate.
+      example: 11.576124
+      required: true
+      selector:
+        number:
+          step: 0.000001
+    live_period:
+      description: Period in seconds for which location is live.
+      example: 3600
+      required: false
+      selector:
+        number:
+
+send_poll:
+  description: Send a native Telegram poll (with smart tracking for meetings, meals, votes).
+  fields:
+    target:
+      description: Target chat ID(s).
+      required: false
+      selector:
+        object:
+    question:
+      description: The poll question.
+      example: "Wann wollen wir uns treffen?"
+      required: true
+      selector:
+        text:
+    options:
+      description: List of option answer strings.
+      example: "['Freitag 18 Uhr', 'Samstag 15 Uhr', 'Sonntag 12 Uhr']"
+      required: true
+      selector:
+        object:
+    category:
+      description: Smart category for automated result evaluation.
+      default: general
+      selector:
+        select:
+          options:
+            - meeting
+            - meal
+            - vote
+            - general
+    is_anonymous:
+      description: If poll votes should be anonymous.
+      default: false
+      selector:
+        boolean:
+    allows_multiple_answers:
+      description: Allow multiple options to be checked.
+      default: true
+      selector:
+        boolean:
+
+stop_poll:
+  description: Stop/close an active Telegram poll.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID of the poll.
+      required: true
+      selector:
+        number:
+
+edit_message:
+  description: Edit text of an existing message.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID to edit.
+      required: true
+      selector:
+        number:
+    message:
+      description: New message text.
+      required: true
+      selector:
+        text:
+          multiline: true
+
+edit_caption:
+  description: Edit caption of an existing media message.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID to edit caption for.
+      required: true
+      selector:
+        number:
+    caption:
+      description: New caption text.
+      required: true
+      selector:
+        text:
+
+edit_replymarkup:
+  description: Edit the inline keyboard of an existing message.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID to update buttons for.
+      required: true
+      selector:
+        number:
+    inline_keyboard:
+      description: New inline keyboard structure.
+      required: true
+      selector:
+        object:
+
+delete_message:
+  description: Delete a message from a chat.
+  fields:
+    target:
+      description: Target chat ID.
+      required: false
+      selector:
+        object:
+    message_id:
+      description: Message ID to delete.
+      required: true
+      selector:
+        number:
+
+answer_callback_query:
+  description: Answer an incoming inline button callback query.
+  fields:
+    callback_query_id:
+      description: The ID of the callback query.
+      required: true
+      selector:
+        text:
+    message:
+      description: Text to display in popup notification or toast.
+      required: false
+      selector:
+        text:
+    show_alert:
+      description: If true, shows an alert popup instead of a toast.
+      default: false
+      selector:
+        boolean:
+
+leave_chat:
+  description: Make the bot leave a group or channel.
+  fields:
+    target:
+      description: Chat ID to leave.
+      required: true
+      selector:
+        object:
 
 ban_user:
   description: Ban a user from a Telegram group.
@@ -45,14 +376,14 @@ ban_user:
           min: 1
           max: 999999999999
     duration:
-      description: Optional duration for a temporary ban (e.g. 1h, 1d). If omitted, the ban is permanent.
+      description: Optional duration for temporary ban (e.g. 1h, 1d).
       example: "12h"
       required: false
       selector:
         text:
     reason:
-      description: The reason for the ban.
-      example: "Spam detected by HA"
+      description: Reason for the ban.
+      example: "Spam detected"
       required: false
       selector:
         text:
@@ -61,24 +392,20 @@ unban_user:
   description: Unban a user from a Telegram group.
   fields:
     group_id:
-      description: The ID of the group.
+      description: The numerical ID of the Telegram group.
       example: -100123456789
       required: true
       selector:
         number:
-          min: -999999999999999
-          max: 999999999999999
     user_id:
       description: The ID of the user to unban.
       example: 12345678
       required: true
       selector:
         number:
-          min: 1
-          max: 999999999999
 
 mute_user:
-  description: Mute a user in a Telegram group.
+  description: Mute (restrict) a user in a Telegram group.
   fields:
     group_id:
       description: The ID of the group.
@@ -86,31 +413,27 @@ mute_user:
       required: true
       selector:
         number:
-          min: -999999999999999
-          max: 999999999999999
     user_id:
       description: The ID of the user to mute.
       example: 12345678
       required: true
       selector:
         number:
-          min: 1
-          max: 999999999999
     duration:
-      description: Duration of the mute (e.g. 1h, 1d).
-      example: "2h"
+      description: Duration of the mute (e.g. 1h, 1d, 7d).
+      example: "1d"
       required: true
       selector:
         text:
     reason:
-      description: The reason for the mute.
-      example: "Excessive messages"
+      description: Reason for the mute.
+      example: "Too noisy in chat"
       required: false
       selector:
         text:
 
 warn_user:
-  description: Issue a warning to a user in a Telegram group.
+  description: Issue a formal warning to a user in a Telegram group.
   fields:
     group_id:
       description: The ID of the group.
@@ -118,25 +441,21 @@ warn_user:
       required: true
       selector:
         number:
-          min: -999999999999999
-          max: 999999999999999
     user_id:
       description: The ID of the user to warn.
       example: 12345678
       required: true
       selector:
         number:
-          min: 1
-          max: 999999999999
     reason:
-      description: The reason for the warning.
+      description: Reason for the warning.
       example: "Inappropriate language"
       required: true
       selector:
         text:
 
 broadcast:
-  description: Broadcast a message to all or selected groups across platforms.
+  description: Send a broadcast message to multiple or all managed groups.
   fields:
     text:
       description: The message text to broadcast.
@@ -144,41 +463,38 @@ broadcast:
       required: true
       selector:
         text:
+          multiline: true
     group_ids:
-      description: Optional list of group IDs to restrict the broadcast.
+      description: Optional list of numerical group IDs. If omitted, sends to all active groups.
       example: [-100123456789, -100987654321]
       required: false
       selector:
         object:
     platform:
-      description: Optional target platform filter (e.g. telegram, whatsapp).
+      description: Target platform filter (e.g. telegram, whatsapp).
       example: "telegram"
       required: false
       selector:
         text:
 
 adjust_reputation:
-  description: Adjust a user's reputation score.
+  description: Adjust a user's reputation score and XP in a group.
   fields:
     user_id:
-      description: The ID of the user.
+      description: The Telegram ID of the user.
       example: 12345678
       required: true
       selector:
         number:
-          min: 1
-          max: 999999999999
     delta:
-      description: Score change (positive or negative).
-      example: -10
+      description: Amount to add or subtract (e.g. +10, -5).
+      example: 10
       required: true
       selector:
         number:
-          min: -1000
-          max: 1000
     reason:
-      description: Reason for reputation adjustment.
-      example: "Helpful community response"
+      description: Reason for adjustment.
+      example: "Helpful response in chat"
       required: false
       selector:
         text:
@@ -188,57 +504,61 @@ adjust_reputation:
       required: false
       selector:
         number:
-          min: -999999999999999
-          max: 999999999999999
 
 apply_preset:
-  description: Apply a pre-configured security preset to a group.
+  description: Apply a security preset (e.g. strict, standard, relaxed) to a group.
   fields:
     group_id:
-      description: The numerical ID of the group.
+      description: The Telegram group ID.
       example: -100123456789
       required: true
       selector:
         number:
-          min: -999999999999999
-          max: 999999999999999
     preset_name:
-      description: Name of the preset (e.g. strict, moderate, relaxed, lockdown).
+      description: Name of the preset (strict, standard, relaxed).
       example: "strict"
       required: true
       selector:
-        text:
+        select:
+          options:
+            - strict
+            - standard
+            - relaxed
+
+sync_filters:
+  description: Manually trigger an immediate update of all external security filters and blacklists.
+
+maintenance_vacuum:
+  description: Trigger database VACUUM maintenance.
 
 maintenance_cleanup:
-  description: Clean up old event logs and transient data.
+  description: Trigger cleanup of orphaned groups, old sessions, and temporary files.
   fields:
     days:
-      description: Retention period in days (events older than this will be removed).
+      description: Retention days threshold.
       example: 30
       required: false
       selector:
         number:
-          min: 1
-          max: 365
 
 maintenance_purge:
-  description: Purge all stored records and settings for a specific group.
+  description: Purge logs for a specific group.
   fields:
     group_id:
-      description: The numerical ID of the group to purge.
+      description: Numerical ID of the group to purge.
       example: -100123456789
       required: true
       selector:
         number:
-          min: -999999999999999
-          max: 999999999999999
+
+maintenance_live_test:
+  description: Run the automated self-diagnostic test suite.
 
 mark_notifications_read:
   description: Mark system notifications as read.
   fields:
     notification_ids:
-      description: Optional list of notification IDs to mark as read. If omitted, marks all.
-      example: ["notif_1", "notif_2"]
+      description: Optional list of notification IDs. If omitted, marks all as read.
       required: false
       selector:
         object:
@@ -247,24 +567,13 @@ whatsapp_action:
   description: Trigger an action on the WhatsApp bridge.
   fields:
     action:
-      description: Action name (e.g. restart, reconnect, logout, sync).
+      description: The action name (e.g. reconnect, disconnect).
       example: "reconnect"
       required: true
       selector:
         text:
     data:
-      description: Optional additional action parameters.
-      example: {"force": true}
+      description: Optional payload for the action.
       required: false
       selector:
         object:
-
-sync_filters:
-  description: Trigger global filter synchronization.
-
-maintenance_vacuum:
-  description: Trigger SQLite database vacuum and optimization.
-
-maintenance_live_test:
-  description: Run end-to-end diagnostic test suite.
-

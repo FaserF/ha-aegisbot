@@ -80,7 +80,6 @@ def auto_enable_custom_integrations(request):
     if "hass" in request.fixturenames:
         hass = request.getfixturevalue("hass")
         hass.data.pop("custom_components", None)
-        hass.config.components.add("hassio")
     yield
     _ensure_sockets()
 
@@ -118,4 +117,23 @@ def mock_api():
         client.async_get_maintenance_status = AsyncMock()
         client.async_get_whatsapp_status = AsyncMock()
         client.async_whatsapp_action = AsyncMock()
+        client.async_telegram_send_message = AsyncMock(return_value={"success": True})
+        client.async_telegram_send_photo = AsyncMock(return_value={"success": True})
+        client.async_telegram_send_video = AsyncMock(return_value={"success": True})
+        client.async_telegram_send_document = AsyncMock(return_value={"success": True})
+        client.async_telegram_send_animation = AsyncMock(return_value={"success": True})
+        client.async_telegram_send_voice = AsyncMock(return_value={"success": True})
+        client.async_telegram_send_location = AsyncMock(return_value={"success": True})
+        client.async_telegram_send_poll = AsyncMock(return_value={"success": True, "poll_id": "p1"})
+        client.async_telegram_stop_poll = AsyncMock(return_value={"success": True})
+        client.async_telegram_edit_message_text = AsyncMock(return_value={"success": True})
+        client.async_telegram_edit_message_caption = AsyncMock(return_value={"success": True})
+        client.async_telegram_edit_message_reply_markup = AsyncMock(return_value={"success": True})
+        client.async_telegram_delete_message = AsyncMock(return_value={"success": True})
+        client.async_telegram_answer_callback_query = AsyncMock(return_value={"success": True})
+        client.async_telegram_leave_chat = AsyncMock(return_value={"success": True})
+        client.async_telegram_get_me = AsyncMock(return_value={"id": 12345, "is_bot": True})
+        client.async_telegram_get_allowed_chats = AsyncMock(return_value=[])
+        client.async_telegram_set_allowed_chats = AsyncMock(return_value={"success": True})
+        client.async_register_ha_webhook = AsyncMock(return_value={"success": True})
         yield client

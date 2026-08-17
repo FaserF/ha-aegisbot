@@ -6,44 +6,108 @@
 [![CI Orchestrator](https://github.com/FaserF/ha-aegisbot/actions/workflows/ci-orchestrator.yml/badge.svg)](https://github.com/FaserF/ha-aegisbot/actions/workflows/ci-orchestrator.yml)
 [![Downloads (Current release)](https://img.shields.io/github/downloads/FaserF/ha-aegisbot/latest/aegisbot.zip?label=Downloads%20(Current%20release)&style=flat-square)](https://github.com/FaserF/ha-aegisbot/releases)
 
-A professional, modern Home Assistant integration for [**AegisBot**](https://github.com/FaserF/AegisBot) — the advanced Telegram (and Messenger) group defender. Monitor group health, track moderation stats, and manage security protocols directly from your Home Assistant dashboard.
+A professional, modern Home Assistant integration for [**AegisBot**](https://github.com/FaserF/AegisBot) — the advanced Telegram (and Messenger) group defender. Monitor group health, track moderation stats, manage security protocols, and use AegisBot as a **full 1:1 Telegram Bot replacement** with smart polls, inline keyboard actions, and bidirectional real-time webhook event sync!
 
 ## 🧭 Quick Links
 
 | | | | |
 | :--- | :--- | :--- | :--- |
-| [✨ Features](#-features) | [📦 Installation](#-installation) | [⚙️ Configuration](#️-configuration) | [🛡️ Security](SECURITY.md) |
-| [🛠️ Options](#️-options-flow) | [🧱 Entities](#-entities) | [📖 Automations](#-automation-examples) | [❓ FAQ](#-troubleshooting--faq) |
+| [✨ Features](#-features) | [🤖 1:1 Telegram Parity](#-11-telegram-bot-parity--replacement) | [🗳️ Smart Polls](#️-smart-polls-for-meetings--food-planning) | [📦 Installation](#-installation) |
+| [⚙️ Configuration](#️-configuration) | [🛠️ Options](#️-options-flow--allowed-chat-ids-sync) | [🧱 Entities](#-entities) | [📖 Automations](#-automation-examples) |
 | [🧑‍💻 Development](#-development) | [💖 Credits](#-credits--acknowledgements) | [📄 License](#-license) | |
 
+---
+
 ### Why use this integration?
-AegisBot is a powerful system for group management and moderation. This integration allows you to bridge the gap between your community management and your Home Assistant dashboard. You can monitor moderation status, active groups, and get alerted to critical moderation events natively in Home Assistant.
+Running both the official Home Assistant `telegram_bot` integration and AegisBot on the same Telegram Bot token causes polling conflicts (getUpdates collisions). 
+This integration solves that completely: **AegisBot handles all Telegram polling and group defense**, while proxying every single Telegram action and event into Home Assistant in real time via Webhooks!
 
 ## ✨ Features
 
-- **Real-time Monitoring**:
-  - **Global Stats**: Total protected groups, active warnings, and blocked spam links across all groups.
-  - **Group Health**: Per-group health scores based on recent activity and moderation ratios.
-  - **AI Assistant**: Monitor the usage and performance of your Gemini-powered FAQ system.
-- **Moderation Controls**:
-  - **Content Locks**: Toggles for individual group settings like Media, Links, RTL, Buttons, and Stickers.
-  - **System Status**: Monitor the connectivity and latency of your AegisBot instance and its database.
-- **Administrative Actions**:
-  - **Filter Sync**: Manually trigger a synchronization of your global blocklists and filters.
-  - **Federation Sync**: Synchronize moderation settings across your federation in real-time.
-  - **Group Moderation & Actions**: Perform Telegram actions directly via HA Services (`send_message`, `ban_user`, `mute_user`, `warn_user`, etc.).
-- **Optimized for Reliability**:
-  - **DataUpdateCoordinator**: Efficient state polling that respects your server resources.
-  - **Diagnostics**: Full support for Home Assistant diagnostic exports to help with troubleshooting.
+- **Full 1:1 Telegram Bot Parity**:
+  - `notify.aegisbot` drop-in notification platform supporting HTML/Markdown, photos, videos, documents, audio, locations, inline keyboards, and polls.
+  - Native services for all Telegram actions: `send_message`, `send_photo`, `send_video`, `send_document`, `send_animation`, `send_voice`, `send_location`, `send_poll`, `stop_poll`, `edit_message`, `edit_caption`, `edit_replymarkup`, `delete_message`, `answer_callback_query`, `leave_chat`.
+- **Smart Polls (Meeting Coordination & Meal Planning)**:
+  - Create native Telegram polls from Home Assistant automations.
+  - AegisBot automatically tracks voter choices, computes real-time consensus, and fires `aegisbot_poll_result` events back to Home Assistant when consensus or majority is reached!
+- **Real-Time Push Events via Webhooks**:
+  - Receive real-time Telegram events in Home Assistant: `aegisbot_command`, `aegisbot_text`, `aegisbot_callback`, `aegisbot_poll_update`, `aegisbot_poll_answer`, `aegisbot_poll_result`.
+  - Automatic bidirectional sync of `allowed_chat_ids` between Home Assistant and AegisBot.
+- **Real-time Monitoring & Moderation**:
+  - **Global Stats**: Protected groups, active warnings, and blocked spam links across all groups.
+  - **Group Health**: Per-group health scores and warning counters.
+  - **Content Locks**: Switches for Media, Links, RTL, Buttons, Stickers, and more.
+  - **Moderation Actions**: `ban_user`, `unban_user`, `mute_user`, `warn_user`, `broadcast`, `adjust_reputation`, `apply_preset`.
+
+---
+
+## 🤖 1:1 Telegram Bot Parity & Replacement
+
+### Notification Service (`notify.aegisbot`)
+```yaml
+action: notify.aegisbot
+data:
+  message: "🚨 Front door movement detected!"
+  title: "Home Security"
+  target: -100123456789
+  data:
+    photo: "https://example.com/snapshot.jpg"
+    inline_keyboard:
+      - ["Turn On Lights:light_on", "Siren Alarm:sound_alarm"]
+```
+
+### Direct Service Calls (`aegisbot.send_message`, `aegisbot.send_photo`, etc.)
+```yaml
+action: aegisbot.send_message
+data:
+  target: -100123456789
+  message: "<b>System Update:</b> All backups completed successfully."
+  parse_mode: html
+  inline_keyboard:
+    - ["View Status:view_status", "Dismiss:dismiss"]
+```
+
+---
+
+## 🗳️ Smart Polls for Meetings & Food Planning
+
+Send interactive polls and let AegisBot automatically compute the winning option:
+
+```yaml
+action: aegisbot.send_poll
+data:
+  target: -100123456789
+  question: "Wann wollen wir uns zum Essen treffen?"
+  options:
+    - "Freitag 18:00 Uhr"
+    - "Freitag 19:30 Uhr"
+    - "Samstag 18:00 Uhr"
+  category: "meeting"
+  allows_multiple_answers: true
+  is_anonymous: false
+```
+
+### Automation on Poll Result / Consensus:
+```yaml
+alias: "AegisBot Meeting Poll Consensus Handler"
+trigger:
+  - platform: event
+    event_type: aegisbot_poll_result
+condition:
+  - condition: template
+    value_template: "{{ trigger.event.data.status == 'consensus' }}"
+action:
+  - action: notify.aegisbot
+    data:
+      target: "{{ trigger.event.data.chat_id }}"
+      message: "🎉 Treffen steht fest: <b>{{ trigger.event.data.winning_options[0].text }}</b>!"
+```
+
+---
 
 ## 📦 Installation
 
-> [!TIP]
-> This integration requires an active AegisBot instance. You can easily deploy AegisBot as a **Home Assistant App** (formerly Addon) using my [hassio-addons repository](https://github.com/FaserF/hassio-addons).
-
 ### HACS (Recommended)
-
-This integration is fully compatible with [HACS](https://hacs.xyz/).
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=FaserF&repository=ha-aegisbot&category=integration)
 
@@ -56,23 +120,17 @@ This integration is fully compatible with [HACS](https://hacs.xyz/).
 ## ⚙️ Configuration
 
 ### 🔍 Auto-Discovery (Zeroconf / mDNS & Supervisor)
-- **Automatic Detection**: When running the official AegisBot Add-on (with `host_network: true`), Home Assistant will **automatically discover** the instance via Zeroconf (`_ha-aegisbot._tcp.local.`) and display a discovery notification in **Settings ➔ Devices & Services**.
-- **Supervisor Integration**: If discovered or added manually on a Home Assistant OS / Supervised system, the integration automatically pre-fills the internal URL (`http://edfe50eb-aegisbot:8077`) and reads the local API token from `/data/.api_token`.
+- **Automatic Detection**: Home Assistant discovers AegisBot automatically via Zeroconf (`_ha-aegisbot._tcp.local.`).
+- **Supervisor Integration**: When using the official Add-on, internal URL and authentication token are prefilled automatically.
 
-### ✍️ Manual Setup
+### 🛠️ Options Flow & Allowed Chat IDs Sync
+In **Settings > Devices & Services > AegisBot > Configure**:
+- Set **Scan Interval** (seconds).
+- Configure **Allowed Telegram Chat IDs** (comma-separated). Changes are immediately synchronized with your AegisBot server.
 
-[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow.svg)](https://my.home-assistant.io/redirect/config_flow/?domain=aegisbot)
-
-1. Navigate to **Settings > Devices & Services**.
-2. Click **Add Integration** and search for **AegisBot**.
-3. Enter your AegisBot details:
-   - **URL**: Your AegisBot instance URL (e.g., `http://192.168.1.100:8077` or `https://aegis.yourdomain.com`).
-   - **API Key**: A secure API token generated via the AegisBot dashboard or auto-generated by the Add-on.
-
+---
 
 ## 🧱 Entities
-
-The integration provides sensors and controls categorized by group and system status.
 
 | Platform | Category | Entities |
 | :--- | :--- | :--- |
@@ -81,7 +139,10 @@ The integration provides sensors and controls categorized by group and system st
 | **Binary Sensor** | System | AegisBot Status, Database Status |
 | **Binary Sensor** | Per Group | Group Active State |
 | **Switch** | Per Group | Lock Media, Lock Links, Lock RTL, Lock Buttons, Lock Stickers, etc. |
-| **Button** | System | Sync Global Filters |
+| **Button** | System | Sync Global Filters, Vacuum Database, Run Maintenance Test |
+| **Notify** | Communication | `notify.aegisbot` |
+
+---
 
 ## ❤️ Support This Project
 

@@ -96,5 +96,39 @@ async def test_flow_zeroconf_discovery(hass, mock_api):
             context={"source": "zeroconf"},
             data=discovery_info,
         )
-        assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
-        assert result["title"] == "http://192.168.1.100:8077"
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
+        assert result["step_id"] == "discovery_confirm"
+
+        # Confirm step
+        confirm_result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={},
+        )
+        assert confirm_result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+        assert confirm_result["title"] == "http://192.168.1.100:8077"
+
+
+async def test_options_flow(hass):
+    """Test options flow for AegisBot."""
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.aegisbot.const import CONF_ALLOWED_CHAT_IDS
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_URL: "http://example.com", CONF_API_KEY: "api_key"},
+        options={CONF_ALLOWED_CHAT_IDS: "-100123, -100456"},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "init"
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={"scan_interval": 60, CONF_ALLOWED_CHAT_IDS: "-100789, -100999"},
+    )
+    assert result2["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+    assert result2["data"]["scan_interval"] == 60
+    assert result2["data"][CONF_ALLOWED_CHAT_IDS] == "-100789, -100999"
+

@@ -275,6 +275,520 @@ class AegisBotApiClient:
             data=payload,
         )
 
+    # ------------------------------------------------------------------
+    # Telegram Bot API Proxy Methods (1:1 with telegram_bot)
+    # ------------------------------------------------------------------
+
+    async def async_telegram_send_message(
+        self,
+        chat_id: int | str,
+        text: str,
+        parse_mode: str | None = "HTML",
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+        keyboard: Any = None,
+        disable_notification: bool = False,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Send a text message via Telegram."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": parse_mode,
+            "disable_notification": disable_notification,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+        if keyboard is not None:
+            payload["keyboard"] = keyboard
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/send_message",
+            data=payload,
+        )
+
+    async def async_telegram_send_photo(
+        self,
+        chat_id: int | str,
+        file: str,
+        caption: str | None = None,
+        parse_mode: str | None = "HTML",
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+        keyboard: Any = None,
+        disable_notification: bool = False,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Send a photo via Telegram."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "file": file,
+            "caption": caption,
+            "parse_mode": parse_mode,
+            "disable_notification": disable_notification,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+        if keyboard is not None:
+            payload["keyboard"] = keyboard
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/send_photo",
+            data=payload,
+        )
+
+    async def async_telegram_send_video(
+        self,
+        chat_id: int | str,
+        file: str,
+        caption: str | None = None,
+        parse_mode: str | None = "HTML",
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+        keyboard: Any = None,
+        disable_notification: bool = False,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Send a video via Telegram."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "file": file,
+            "caption": caption,
+            "parse_mode": parse_mode,
+            "disable_notification": disable_notification,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+        if keyboard is not None:
+            payload["keyboard"] = keyboard
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/send_video",
+            data=payload,
+        )
+
+    async def async_telegram_send_document(
+        self,
+        chat_id: int | str,
+        file: str,
+        caption: str | None = None,
+        parse_mode: str | None = "HTML",
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+        keyboard: Any = None,
+        disable_notification: bool = False,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Send a document/file via Telegram."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "file": file,
+            "caption": caption,
+            "parse_mode": parse_mode,
+            "disable_notification": disable_notification,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+        if keyboard is not None:
+            payload["keyboard"] = keyboard
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/send_document",
+            data=payload,
+        )
+
+    async def async_telegram_send_animation(
+        self,
+        chat_id: int | str,
+        file: str,
+        caption: str | None = None,
+        parse_mode: str | None = "HTML",
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+        keyboard: Any = None,
+        disable_notification: bool = False,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Send an animation (GIF) via Telegram."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "file": file,
+            "caption": caption,
+            "parse_mode": parse_mode,
+            "disable_notification": disable_notification,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+        if keyboard is not None:
+            payload["keyboard"] = keyboard
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/send_animation",
+            data=payload,
+        )
+
+    async def async_telegram_send_voice(
+        self,
+        chat_id: int | str,
+        file: str,
+        caption: str | None = None,
+        parse_mode: str | None = "HTML",
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+        keyboard: Any = None,
+        disable_notification: bool = False,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Send a voice audio message via Telegram."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "file": file,
+            "caption": caption,
+            "parse_mode": parse_mode,
+            "disable_notification": disable_notification,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+        if keyboard is not None:
+            payload["keyboard"] = keyboard
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/send_voice",
+            data=payload,
+        )
+
+    async def async_telegram_send_location(
+        self,
+        chat_id: int | str,
+        latitude: float,
+        longitude: float,
+        live_period: int | None = None,
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+        disable_notification: bool = False,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Send a location coordinate via Telegram."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "latitude": latitude,
+            "longitude": longitude,
+            "disable_notification": disable_notification,
+        }
+        if live_period is not None:
+            payload["live_period"] = live_period
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/send_location",
+            data=payload,
+        )
+
+    async def async_telegram_send_poll(
+        self,
+        chat_id: int | str,
+        question: str,
+        options: list[str],
+        is_anonymous: bool = True,
+        poll_type: str = "regular",
+        allows_multiple_answers: bool = False,
+        correct_option_id: int | None = None,
+        explanation: str | None = None,
+        open_period: int | None = None,
+        close_date: int | None = None,
+        is_closed: bool | None = None,
+        category: str = "general",
+        reply_markup: Any = None,
+        disable_notification: bool = False,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Send a native Telegram Poll with smart tracking."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "question": question,
+            "options": options,
+            "is_anonymous": is_anonymous,
+            "poll_type": poll_type,
+            "allows_multiple_answers": allows_multiple_answers,
+            "category": category,
+            "disable_notification": disable_notification,
+        }
+        if correct_option_id is not None:
+            payload["correct_option_id"] = correct_option_id
+        if explanation is not None:
+            payload["explanation"] = explanation
+        if open_period is not None:
+            payload["open_period"] = open_period
+        if close_date is not None:
+            payload["close_date"] = close_date
+        if is_closed is not None:
+            payload["is_closed"] = is_closed
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/send_poll",
+            data=payload,
+        )
+
+    async def async_telegram_stop_poll(
+        self,
+        chat_id: int | str,
+        message_id: int,
+        reply_markup: Any = None,
+    ) -> dict[str, Any]:
+        """Stop an active Telegram poll and return final results."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/stop_poll",
+            data=payload,
+        )
+
+    async def async_telegram_edit_message_text(
+        self,
+        chat_id: int | str,
+        message_id: int,
+        text: str,
+        parse_mode: str | None = "HTML",
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+    ) -> dict[str, Any]:
+        """Edit text of an existing message."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text,
+            "parse_mode": parse_mode,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/edit_message_text",
+            data=payload,
+        )
+
+    async def async_telegram_edit_message_caption(
+        self,
+        chat_id: int | str,
+        message_id: int,
+        caption: str,
+        parse_mode: str | None = "HTML",
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+    ) -> dict[str, Any]:
+        """Edit caption of an existing media message."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "caption": caption,
+            "parse_mode": parse_mode,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/edit_message_caption",
+            data=payload,
+        )
+
+    async def async_telegram_edit_message_reply_markup(
+        self,
+        chat_id: int | str,
+        message_id: int,
+        reply_markup: Any = None,
+        inline_keyboard: Any = None,
+    ) -> dict[str, Any]:
+        """Edit inline keyboard markup of an existing message."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+        if inline_keyboard is not None:
+            payload["inline_keyboard"] = inline_keyboard
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/edit_message_reply_markup",
+            data=payload,
+        )
+
+    async def async_telegram_delete_message(
+        self,
+        chat_id: int | str,
+        message_id: int,
+    ) -> dict[str, Any]:
+        """Delete a message from a chat."""
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+        }
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/delete_message",
+            data=payload,
+        )
+
+    async def async_telegram_answer_callback_query(
+        self,
+        callback_query_id: str,
+        text: str | None = None,
+        show_alert: bool = False,
+        url: str | None = None,
+        cache_time: int | None = None,
+    ) -> dict[str, Any]:
+        """Send an answer to a callback query."""
+        payload: dict[str, Any] = {
+            "callback_query_id": callback_query_id,
+            "show_alert": show_alert,
+        }
+        if text is not None:
+            payload["text"] = text
+        if url is not None:
+            payload["url"] = url
+        if cache_time is not None:
+            payload["cache_time"] = cache_time
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/answer_callback_query",
+            data=payload,
+        )
+
+    async def async_telegram_leave_chat(
+        self,
+        chat_id: int | str,
+    ) -> dict[str, Any]:
+        """Leave a group or channel."""
+        payload: dict[str, Any] = {"chat_id": chat_id}
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/leave_chat",
+            data=payload,
+        )
+
+    async def async_telegram_get_me(self) -> dict[str, Any]:
+        """Get Telegram bot profile details."""
+        return await self._api_wrapper(
+            method="get",
+            url=f"{self._url}/api/v1/telegram/get_me",
+        )
+
+    async def async_telegram_get_allowed_chats(self) -> list[Any]:
+        """Get allowed chat IDs from AegisBot."""
+        res = await self._api_wrapper(
+            method="get",
+            url=f"{self._url}/api/v1/telegram/allowed_chats",
+        )
+        return res.get("allowed_chat_ids", [])
+
+    async def async_telegram_set_allowed_chats(
+        self, allowed_chat_ids: list[Any] | str
+    ) -> dict[str, Any]:
+        """Sync allowed chat IDs to AegisBot."""
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/allowed_chats",
+            data={"allowed_chat_ids": allowed_chat_ids},
+        )
+
+    async def async_register_ha_webhook(
+        self,
+        webhook_id: str,
+        ha_url: str | None = None,
+        allowed_chat_ids: list[Any] | str | None = None,
+    ) -> dict[str, Any]:
+        """Register Home Assistant Webhook ID with AegisBot for real-time event push."""
+        payload: dict[str, Any] = {"webhook_id": webhook_id}
+        if ha_url:
+            payload["ha_url"] = ha_url
+        if allowed_chat_ids is not None:
+            payload["allowed_chat_ids"] = allowed_chat_ids
+
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/register_webhook",
+            data=payload,
+        )
+
     async def _api_wrapper(
         self,
         method: str,

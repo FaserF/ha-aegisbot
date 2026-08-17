@@ -6,14 +6,16 @@
         "description": "Enter your AegisBot instance URL and a secure API token.",
         "data": {
           "url": "Instance URL",
-          "api_key": "API Key"
+          "api_key": "API Key",
+          "allowed_chat_ids": "Allowed Chat IDs (comma-separated, optional)"
         }
       },
       "discovery_confirm": {
         "title": "Discovered AegisBot",
         "description": "Discovered AegisBot instance at {url}. Enter the API key to connect or click Submit if auto-detected.",
         "data": {
-          "api_key": "API Key"
+          "api_key": "API Key",
+          "allowed_chat_ids": "Allowed Chat IDs (comma-separated, optional)"
         }
       },
       "hassio_confirm": {
@@ -35,9 +37,10 @@
     "step": {
       "init": {
         "title": "AegisBot Options",
-        "description": "Configure AegisBot integration options.",
+        "description": "Configure AegisBot integration options and Telegram sync.",
         "data": {
-          "scan_interval": "Scan Interval (seconds)"
+          "scan_interval": "Scan Interval (seconds)",
+          "allowed_chat_ids": "Allowed Telegram Chat IDs (comma-separated)"
         }
       }
     }

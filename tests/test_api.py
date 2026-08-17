@@ -36,7 +36,6 @@ async def test_api_auth_error(hass, aioclient_mock):
 
 async def test_api_comm_error(hass, aioclient_mock):
     """Test communication error."""
-    # To simulate a communication error with aioclient_mock, we use exc
     aioclient_mock.get("http://example.com/api/v1/health", exc=aiohttp.ClientError)
     api = AegisBotApiClient(
         "http://example.com", "api_key", async_get_clientsession(hass)
@@ -48,7 +47,7 @@ async def test_api_comm_error(hass, aioclient_mock):
 async def test_api_get_stats(hass, aioclient_mock):
     """Test get_stats."""
     aioclient_mock.get(
-        "http://example.com/api/v1/stats",
+        "http://example.com/api/v1/stats/overview",
         json={"data": {"protected_groups": 10}},
     )
     api = AegisBotApiClient(
@@ -87,11 +86,11 @@ async def test_api_broadcast(hass, aioclient_mock):
 async def test_api_reputation(hass, aioclient_mock):
     """Test reputation methods."""
     aioclient_mock.get(
-        "http://example.com/api/v1/reputation/12345?group_id=-100",
+        "http://example.com/api/v1/reputation/-100/member/12345",
         json={"score": 80},
     )
     aioclient_mock.post(
-        "http://example.com/api/v1/reputation/12345/adjust",
+        "http://example.com/api/v1/reputation/-100/adjust/12345",
         json={"success": True, "score": 90},
     )
     api = AegisBotApiClient(
@@ -109,15 +108,15 @@ async def test_api_reputation(hass, aioclient_mock):
 async def test_api_presets_and_governance(hass, aioclient_mock):
     """Test apply_preset and get_governance_report."""
     aioclient_mock.post(
-        "http://example.com/api/v1/groups/-100/presets/strict",
+        "http://example.com/api/v1/templates/presets/apply/strict/-100",
         json={"applied": True},
     )
     aioclient_mock.get(
-        "http://example.com/api/v1/governance/report/-100",
+        "http://example.com/api/v1/report/governance/-100",
         json={"report": "clean"},
     )
     aioclient_mock.get(
-        "http://example.com/api/v1/governance/report",
+        "http://example.com/api/v1/report/governance/1",
         json={"report": "global"},
     )
     api = AegisBotApiClient(
@@ -139,13 +138,13 @@ async def test_api_maintenance_and_whatsapp(hass, aioclient_mock):
         "http://example.com/api/v1/maintenance/vacuum", json={"vacuumed": True}
     )
     aioclient_mock.post(
-        "http://example.com/api/v1/maintenance/cleanup", json={"cleaned": True}
+        "http://example.com/api/v1/maintenance/cleanup-groups", json={"cleaned": True}
     )
     aioclient_mock.post(
-        "http://example.com/api/v1/maintenance/purge/-100", json={"purged": True}
+        "http://example.com/api/v1/maintenance/purge-logs", json={"purged": True}
     )
     aioclient_mock.post(
-        "http://example.com/api/v1/maintenance/live-test", json={"passed": True}
+        "http://example.com/api/v1/maintenance/live-test-suite", json={"passed": True}
     )
     aioclient_mock.get(
         "http://example.com/api/v1/maintenance/status", json={"db_size_mb": 15}
@@ -157,7 +156,7 @@ async def test_api_maintenance_and_whatsapp(hass, aioclient_mock):
         "http://example.com/api/v1/whatsapp/action", json={"result": "ok"}
     )
     aioclient_mock.post(
-        "http://example.com/api/v1/notifications/mark-read", json={"marked": True}
+        "http://example.com/api/v1/notifications/1/read", json={"marked": True}
     )
 
     api = AegisBotApiClient(
@@ -172,4 +171,47 @@ async def test_api_maintenance_and_whatsapp(hass, aioclient_mock):
     assert await api.async_whatsapp_action("reconnect", {"force": True}) == {
         "result": "ok"
     }
-    assert await api.async_mark_notifications_read(["1"]) == {"marked": True}
+    assert await api.async_mark_notifications_read(["1"]) == {"status": "success"}
+
+
+async def test_api_telegram_methods(hass, aioclient_mock):
+    """Test Telegram proxy API methods."""
+    aioclient_mock.post(
+        "http://example.com/api/v1/telegram/send_message",
+        json={"success": True, "message_id": 123},
+    )
+    aioclient_mock.post(
+        "http://example.com/api/v1/telegram/send_photo",
+        json={"success": True, "message_id": 124},
+    )
+    aioclient_mock.post(
+        "http://example.com/api/v1/telegram/send_poll",
+        json={"success": True, "message_id": 125, "poll_id": "poll_99"},
+    )
+    aioclient_mock.post(
+        "http://example.com/api/v1/telegram/register_webhook",
+        json={"success": True, "webhook_id": "wh_1"},
+    )
+    aioclient_mock.get(
+        "http://example.com/api/v1/telegram/allowed_chats",
+        json={"allowed_chat_ids": [-1001, -1002]},
+    )
+
+    api = AegisBotApiClient(
+        "http://example.com", "api_key", async_get_clientsession(hass)
+    )
+
+    msg_res = await api.async_telegram_send_message(-1001, "Hello from HA")
+    assert msg_res["success"] is True
+
+    photo_res = await api.async_telegram_send_photo(-1001, "http://img.jpg")
+    assert photo_res["success"] is True
+
+    poll_res = await api.async_telegram_send_poll(-1001, "Vote", ["A", "B"])
+    assert poll_res["poll_id"] == "poll_99"
+
+    wh_res = await api.async_register_ha_webhook("wh_1")
+    assert wh_res["webhook_id"] == "wh_1"
+
+    chats_res = await api.async_telegram_get_allowed_chats()
+    assert chats_res == [-1001, -1002]
