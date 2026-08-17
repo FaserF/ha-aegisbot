@@ -37,9 +37,13 @@
     "step": {
       "init": {
         "title": "AegisBot Options",
-        "description": "Configure AegisBot integration options and Telegram sync.",
+        "description": "Configure AegisBot integration options, Telegram proxy mode, and multi-bot settings.",
         "data": {
           "scan_interval": "Scan Interval (seconds)",
+          "enable_telegram_proxy": "Enable Telegram Bot & Notify Proxy Mode",
+          "auto_sync_commands": "Auto-sync commands from HA automations to Telegram",
+          "default_bot_id": "Default Bot ID or Username (optional)",
+          "ignored_commands": "Ignored Commands (comma-separated, won't sync to Telegram menu)",
           "allowed_chat_ids": "Allowed Telegram Chat IDs (comma-separated)"
         }
       }

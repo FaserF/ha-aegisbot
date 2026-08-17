@@ -40,6 +40,7 @@ async def test_notify_send_text_message(mock_coordinator):
         disable_notification=False,
         reply_to_message_id=None,
         message_thread_id=None,
+        bot_id=None,
     )
 
 
@@ -62,6 +63,7 @@ async def test_notify_send_photo(mock_coordinator):
         disable_notification=False,
         reply_to_message_id=None,
         message_thread_id=None,
+        bot_id=None,
     )
 
 
@@ -92,11 +94,12 @@ async def test_notify_send_poll(mock_coordinator):
         disable_notification=False,
         reply_to_message_id=None,
         message_thread_id=None,
+        bot_id=None,
     )
 
 
 async def test_notify_send_location(mock_coordinator):
-    service = AegisBotNotificationService(mock_coordinator, default_chat_ids=[-100777])
+    service = AegisBotNotificationService(mock_coordinator, default_chat_ids=[-100777], default_bot_id=42)
     await service.async_send_message(
         message="",
         data={"latitude": 48.137, "longitude": 11.576},
@@ -112,4 +115,27 @@ async def test_notify_send_location(mock_coordinator):
         disable_notification=False,
         reply_to_message_id=None,
         message_thread_id=None,
+        bot_id=42,
     )
+
+
+async def test_notify_send_with_custom_bot(mock_coordinator):
+    service = AegisBotNotificationService(mock_coordinator, default_chat_ids=[-100777])
+    await service.async_send_message(
+        message="Alert from Bot B",
+        data={"bot": "SecurityBot"},
+    )
+
+    mock_coordinator.api.async_telegram_send_message.assert_called_once_with(
+        chat_id=-100777,
+        text="Alert from Bot B",
+        parse_mode="HTML",
+        reply_markup=None,
+        inline_keyboard=None,
+        keyboard=None,
+        disable_notification=False,
+        reply_to_message_id=None,
+        message_thread_id=None,
+        bot_id="SecurityBot",
+    )
+

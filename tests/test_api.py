@@ -196,15 +196,23 @@ async def test_api_telegram_methods(hass, aioclient_mock):
         "http://example.com/api/v1/telegram/allowed_chats",
         json={"allowed_chat_ids": [-1001, -1002]},
     )
+    aioclient_mock.get(
+        "http://example.com/api/v1/telegram/bots",
+        json={"bots": [{"id": 1, "username": "BotOne", "ha_enabled": True}]},
+    )
+    aioclient_mock.post(
+        "http://example.com/api/v1/telegram/sync_commands",
+        json={"success": True, "count": 2},
+    )
 
     api = AegisBotApiClient(
         "http://example.com", "api_key", async_get_clientsession(hass)
     )
 
-    msg_res = await api.async_telegram_send_message(-1001, "Hello from HA")
+    msg_res = await api.async_telegram_send_message(-1001, "Hello from HA", bot_id=1)
     assert msg_res["success"] is True
 
-    photo_res = await api.async_telegram_send_photo(-1001, "http://img.jpg")
+    photo_res = await api.async_telegram_send_photo(-1001, "http://img.jpg", bot_id="BotOne")
     assert photo_res["success"] is True
 
     poll_res = await api.async_telegram_send_poll(-1001, "Vote", ["A", "B"])
@@ -215,3 +223,12 @@ async def test_api_telegram_methods(hass, aioclient_mock):
 
     chats_res = await api.async_telegram_get_allowed_chats()
     assert chats_res == [-1001, -1002]
+
+    bots_res = await api.async_get_telegram_bots()
+    assert len(bots_res) == 1
+    assert bots_res[0]["username"] == "BotOne"
+
+    sync_res = await api.async_sync_commands([{"command": "test", "description": "Test command"}])
+    assert sync_res["success"] is True
+    assert sync_res["count"] == 2
+

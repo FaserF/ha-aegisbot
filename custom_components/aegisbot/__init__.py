@@ -4,16 +4,23 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Any
 from aiohttp import web
 from homeassistant.components import webhook
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
+from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
 from homeassistant.helpers.discovery import async_load_platform
 
 from .const import (
     CONF_ALLOWED_CHAT_IDS,
+    CONF_AUTO_SYNC_COMMANDS,
+    CONF_BOT,
+    CONF_BOT_ID,
     CONF_CHAT_ID,
+    CONF_DEFAULT_BOT_ID,
+    CONF_ENABLE_TELEGRAM_PROXY,
+    CONF_IGNORED_COMMANDS,
     CONF_WEBHOOK_ID,
     DOMAIN,
     EVENT_AEGISBOT_CALLBACK,
@@ -28,12 +35,13 @@ from .coordinator import AegisBotDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [
+EVENT_AUTOMATION_RELOADED = "automation_reloaded"
+
+CORE_PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
     Platform.SWITCH,
     Platform.BUTTON,
-    Platform.NOTIFY,
 ]
 
 
@@ -43,7 +51,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    enable_telegram_proxy = entry.options.get(
+        CONF_ENABLE_TELEGRAM_PROXY,
+        entry.data.get(CONF_ENABLE_TELEGRAM_PROXY, True),
+    )
+    auto_sync_commands = entry.options.get(
+        CONF_AUTO_SYNC_COMMANDS,
+        entry.data.get(CONF_AUTO_SYNC_COMMANDS, True),
+    )
+    default_bot_id = entry.options.get(
+        CONF_DEFAULT_BOT_ID,
+        entry.data.get(CONF_DEFAULT_BOT_ID),
+    )
+
+    platforms = list(CORE_PLATFORMS)
+    if enable_telegram_proxy:
+        platforms.append(Platform.NOTIFY)
+
+    await hass.config_entries.async_forward_entry_setups(entry, platforms)
 
     # Allowed Chat IDs resolution
     allowed_chat_ids = entry.options.get(
@@ -52,14 +78,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if isinstance(allowed_chat_ids, str):
         allowed_chat_ids = [x.strip() for x in allowed_chat_ids.split(",") if x.strip()]
 
-    # Load Notify platform
-    discovery_info = {
-        "entry_id": entry.entry_id,
-        CONF_ALLOWED_CHAT_IDS: allowed_chat_ids,
-    }
-    hass.async_create_task(
-        async_load_platform(hass, Platform.NOTIFY, DOMAIN, discovery_info, {})
-    )
+    # Load Notify platform if enabled
+    if enable_telegram_proxy:
+        discovery_info = {
+            "entry_id": entry.entry_id,
+            CONF_ALLOWED_CHAT_IDS: allowed_chat_ids,
+            CONF_DEFAULT_BOT_ID: default_bot_id,
+        }
+        hass.async_create_task(
+            async_load_platform(hass, Platform.NOTIFY, DOMAIN, discovery_info, {})
+        )
 
     # Webhook Setup for Real-time AegisBot Events
     webhook_id = entry.data.get(CONF_WEBHOOK_ID) or f"{DOMAIN}_{entry.entry_id}"
@@ -79,7 +107,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if event_type:
             hass.bus.async_fire(event_type, event_data)
         else:
-            # Fallback event
             hass.bus.async_fire(EVENT_AEGISBOT_TEXT, event_data)
 
         return web.Response(status=200, text="OK")
@@ -98,14 +125,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Sync Webhook & Allowed Chats to AegisBot in background
     async def _sync_with_aegisbot() -> None:
         try:
-            # Get HA External/Internal URL if available
             ha_url = str(hass.config.api.base_url) if hasattr(hass.config, "api") and hasattr(hass.config.api, "base_url") else None
             await coordinator.api.async_register_ha_webhook(
                 webhook_id=webhook_id,
                 ha_url=ha_url,
                 allowed_chat_ids=allowed_chat_ids,
             )
-            # Bidirectional sync: also fetch current allowed chats
             remote_chats = await coordinator.api.async_telegram_get_allowed_chats()
             if remote_chats and not allowed_chat_ids:
                 new_opts = dict(entry.options)
@@ -117,7 +142,92 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.async_create_task(_sync_with_aegisbot())
 
     # ------------------------------------------------------------------
-    # Service Handlers
+    # Automation Command Scanner & Auto-Sync
+    # ------------------------------------------------------------------
+
+    async def _async_scan_and_sync_commands() -> None:
+        """Scan Home Assistant automations for Telegram commands and sync to bot."""
+        if not auto_sync_commands or not enable_telegram_proxy:
+            return
+
+        raw_ignored = entry.options.get(
+            CONF_IGNORED_COMMANDS, entry.data.get(CONF_IGNORED_COMMANDS, "")
+        )
+        ignored_set: set[str] = (
+            {x.strip().lstrip("/").lower() for x in raw_ignored.split(",") if x.strip()}
+            if isinstance(raw_ignored, str)
+            else {str(x).strip().lstrip("/").lower() for x in raw_ignored}
+        )
+
+        discovered_commands: dict[str, str] = {}
+
+        # 1. Inspect automation config from hass.data
+        raw_configs = hass.data.get("automation_config") or []
+        if isinstance(raw_configs, dict):
+            raw_configs = list(raw_configs.values())
+
+        for auto_conf in raw_configs:
+            if not isinstance(auto_conf, dict):
+                continue
+            triggers = auto_conf.get("trigger") or auto_conf.get("triggers") or []
+            if isinstance(triggers, dict):
+                triggers = [triggers]
+            alias = auto_conf.get("alias") or auto_conf.get("description") or ""
+
+            for trig in triggers:
+                if not isinstance(trig, dict):
+                    continue
+                if trig.get("platform") == "event":
+                    ev_type = trig.get("event_type")
+                    if ev_type in ("aegisbot_command", "telegram_command"):
+                        ev_data = trig.get("event_data") or {}
+                        cmd = ev_data.get("command")
+                        if cmd:
+                            clean_cmd = str(cmd).lstrip("/").split("@")[0].strip().lower()
+                            if clean_cmd and clean_cmd not in ignored_set and clean_cmd not in discovered_commands:
+                                discovered_commands[clean_cmd] = alias or f"Command /{clean_cmd}"
+
+        # 2. Inspect entity states for automations
+        for state in hass.states.async_all("automation"):
+            desc = state.attributes.get("friendly_name") or state.entity_id
+            # If trigger metadata is attached in attributes
+            extra_triggers = state.attributes.get("triggers") or []
+            for trig in extra_triggers:
+                if isinstance(trig, dict) and trig.get("event_type") in ("aegisbot_command", "telegram_command"):
+                    ev_data = trig.get("event_data") or {}
+                    cmd = ev_data.get("command")
+                    if cmd:
+                        clean_cmd = str(cmd).lstrip("/").split("@")[0].strip().lower()
+                        if clean_cmd and clean_cmd not in ignored_set and clean_cmd not in discovered_commands:
+                            discovered_commands[clean_cmd] = desc
+
+        if discovered_commands:
+            payload_cmds = [
+                {"command": cmd, "description": desc[:256]}
+                for cmd, desc in discovered_commands.items()
+            ]
+            try:
+                await coordinator.api.async_sync_commands(
+                    commands=payload_cmds,
+                    bot_id=default_bot_id,
+                )
+                _LOGGER.info(
+                    "Auto-synced %d automation commands to AegisBot: %s",
+                    len(payload_cmds),
+                    list(discovered_commands.keys()),
+                )
+            except Exception as ex:
+                _LOGGER.debug("Failed to auto-sync commands to AegisBot: %s", ex)
+
+    # Trigger scan on startup & on automation reloads
+    async def _on_automation_reloaded(event: Event) -> None:
+        await _async_scan_and_sync_commands()
+
+    hass.bus.async_listen(EVENT_AUTOMATION_RELOADED, _on_automation_reloaded)
+    hass.async_create_task(_async_scan_and_sync_commands())
+
+    # ------------------------------------------------------------------
+    # Service Handlers & Multi-Bot Resolution
     # ------------------------------------------------------------------
 
     def _resolve_target(call: ServiceCall) -> list[Any]:
@@ -131,332 +241,383 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             return []
         return target if isinstance(target, list) else [target]
 
-    async def handle_send_message(call: ServiceCall) -> None:
-        """Handle send_message (1:1 Telegram compatible)."""
-        targets = _resolve_target(call)
-        text = call.data.get("message") or call.data.get("text", "")
-        title = call.data.get("title")
-        if title:
-            text = f"<b>{title}</b>\n{text}"
-
+    def _resolve_bot(call: ServiceCall) -> int | str | None:
         data = call.data.get("data") or {}
-        parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-        inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
-        keyboard = call.data.get("keyboard") or data.get("keyboard")
-        reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-        disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-        reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-        message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
-
-        for t in targets:
-            await coordinator.api.async_telegram_send_message(
-                chat_id=t,
-                text=text,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-                keyboard=keyboard,
-                disable_notification=disable_notification,
-                reply_to_message_id=reply_to_message_id,
-                message_thread_id=message_thread_id,
-            )
-
-    async def handle_send_photo(call: ServiceCall) -> None:
-        """Handle send_photo (1:1 Telegram compatible)."""
-        targets = _resolve_target(call)
-        file_path = (
-            call.data.get("file")
-            or call.data.get("url")
-            or call.data.get("photo")
-        )
-        caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
-        data = call.data.get("data") or {}
-        parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-        inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
-        keyboard = call.data.get("keyboard") or data.get("keyboard")
-        reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-        disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-        reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-        message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
-
-        for t in targets:
-            await coordinator.api.async_telegram_send_photo(
-                chat_id=t,
-                file=file_path,
-                caption=caption,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-                keyboard=keyboard,
-                disable_notification=disable_notification,
-                reply_to_message_id=reply_to_message_id,
-                message_thread_id=message_thread_id,
-            )
-
-    async def handle_send_video(call: ServiceCall) -> None:
-        """Handle send_video (1:1 Telegram compatible)."""
-        targets = _resolve_target(call)
-        file_path = call.data.get("file") or call.data.get("video") or call.data.get("url")
-        caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
-        data = call.data.get("data") or {}
-        parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-        inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
-        keyboard = call.data.get("keyboard") or data.get("keyboard")
-        reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-        disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-        reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-        message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
-
-        for t in targets:
-            await coordinator.api.async_telegram_send_video(
-                chat_id=t,
-                file=file_path,
-                caption=caption,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-                keyboard=keyboard,
-                disable_notification=disable_notification,
-                reply_to_message_id=reply_to_message_id,
-                message_thread_id=message_thread_id,
-            )
-
-    async def handle_send_document(call: ServiceCall) -> None:
-        """Handle send_document (1:1 Telegram compatible)."""
-        targets = _resolve_target(call)
-        file_path = call.data.get("file") or call.data.get("document") or call.data.get("url")
-        caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
-        data = call.data.get("data") or {}
-        parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-        inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
-        keyboard = call.data.get("keyboard") or data.get("keyboard")
-        reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-        disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-        reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-        message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
-
-        for t in targets:
-            await coordinator.api.async_telegram_send_document(
-                chat_id=t,
-                file=file_path,
-                caption=caption,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-                keyboard=keyboard,
-                disable_notification=disable_notification,
-                reply_to_message_id=reply_to_message_id,
-                message_thread_id=message_thread_id,
-            )
-
-    async def handle_send_animation(call: ServiceCall) -> None:
-        """Handle send_animation (1:1 Telegram compatible)."""
-        targets = _resolve_target(call)
-        file_path = call.data.get("file") or call.data.get("animation") or call.data.get("url")
-        caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
-        data = call.data.get("data") or {}
-        parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-        inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
-        keyboard = call.data.get("keyboard") or data.get("keyboard")
-        reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-        disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-        reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-        message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
-
-        for t in targets:
-            await coordinator.api.async_telegram_send_animation(
-                chat_id=t,
-                file=file_path,
-                caption=caption,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-                keyboard=keyboard,
-                disable_notification=disable_notification,
-                reply_to_message_id=reply_to_message_id,
-                message_thread_id=message_thread_id,
-            )
-
-    async def handle_send_voice(call: ServiceCall) -> None:
-        """Handle send_voice (1:1 Telegram compatible)."""
-        targets = _resolve_target(call)
-        file_path = call.data.get("file") or call.data.get("voice") or call.data.get("url")
-        caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
-        data = call.data.get("data") or {}
-        parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
-        inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
-        keyboard = call.data.get("keyboard") or data.get("keyboard")
-        reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
-        disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
-        reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
-        message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
-
-        for t in targets:
-            await coordinator.api.async_telegram_send_voice(
-                chat_id=t,
-                file=file_path,
-                caption=caption,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-                keyboard=keyboard,
-                disable_notification=disable_notification,
-                reply_to_message_id=reply_to_message_id,
-                message_thread_id=message_thread_id,
-            )
-
-    async def handle_send_location(call: ServiceCall) -> None:
-        """Handle send_location (1:1 Telegram compatible)."""
-        targets = _resolve_target(call)
-        lat = call.data["latitude"]
-        lon = call.data["longitude"]
-        live_period = call.data.get("live_period")
-        inline_keyboard = call.data.get("inline_keyboard")
-        reply_markup = call.data.get("reply_markup")
-        disable_notification = call.data.get("disable_notification", False)
-        reply_to_message_id = call.data.get("reply_to_message_id")
-        message_thread_id = call.data.get("message_thread_id")
-
-        for t in targets:
-            await coordinator.api.async_telegram_send_location(
-                chat_id=t,
-                latitude=float(lat),
-                longitude=float(lon),
-                live_period=live_period,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-                disable_notification=disable_notification,
-                reply_to_message_id=reply_to_message_id,
-                message_thread_id=message_thread_id,
-            )
-
-    async def handle_send_poll(call: ServiceCall) -> None:
-        """Handle send_poll (smart polls for meetings, votes, food, etc.)."""
-        targets = _resolve_target(call)
-        question = call.data["question"]
-        options = call.data["options"]
-        is_anonymous = call.data.get("is_anonymous", True)
-        poll_type = call.data.get("type", "regular")
-        allows_multiple_answers = call.data.get("allows_multiple_answers", False)
-        correct_option_id = call.data.get("correct_option_id")
-        explanation = call.data.get("explanation")
-        category = call.data.get("category", "general")
-        reply_markup = call.data.get("reply_markup")
-        disable_notification = call.data.get("disable_notification", False)
-        reply_to_message_id = call.data.get("reply_to_message_id")
-        message_thread_id = call.data.get("message_thread_id")
-
-        for t in targets:
-            await coordinator.api.async_telegram_send_poll(
-                chat_id=t,
-                question=question,
-                options=options,
-                is_anonymous=is_anonymous,
-                poll_type=poll_type,
-                allows_multiple_answers=allows_multiple_answers,
-                correct_option_id=correct_option_id,
-                explanation=explanation,
-                category=category,
-                reply_markup=reply_markup,
-                disable_notification=disable_notification,
-                reply_to_message_id=reply_to_message_id,
-                message_thread_id=message_thread_id,
-            )
-
-    async def handle_stop_poll(call: ServiceCall) -> None:
-        """Handle stop_poll service call."""
-        targets = _resolve_target(call)
-        message_id = call.data["message_id"]
-        reply_markup = call.data.get("reply_markup")
-        for t in targets:
-            await coordinator.api.async_telegram_stop_poll(
-                chat_id=t, message_id=message_id, reply_markup=reply_markup
-            )
-
-    async def handle_edit_message(call: ServiceCall) -> None:
-        """Handle edit_message / edit_message_text service call."""
-        targets = _resolve_target(call)
-        message_id = call.data["message_id"]
-        text = call.data.get("message") or call.data.get("text", "")
-        parse_mode = call.data.get("parse_mode", "HTML")
-        inline_keyboard = call.data.get("inline_keyboard")
-        reply_markup = call.data.get("reply_markup")
-
-        for t in targets:
-            await coordinator.api.async_telegram_edit_message_text(
-                chat_id=t,
-                message_id=message_id,
-                text=text,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-            )
-
-    async def handle_edit_caption(call: ServiceCall) -> None:
-        """Handle edit_caption service call."""
-        targets = _resolve_target(call)
-        message_id = call.data["message_id"]
-        caption = call.data["caption"]
-        parse_mode = call.data.get("parse_mode", "HTML")
-        inline_keyboard = call.data.get("inline_keyboard")
-        reply_markup = call.data.get("reply_markup")
-
-        for t in targets:
-            await coordinator.api.async_telegram_edit_message_caption(
-                chat_id=t,
-                message_id=message_id,
-                caption=caption,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-            )
-
-    async def handle_edit_replymarkup(call: ServiceCall) -> None:
-        """Handle edit_replymarkup service call."""
-        targets = _resolve_target(call)
-        message_id = call.data["message_id"]
-        inline_keyboard = call.data.get("inline_keyboard")
-        reply_markup = call.data.get("reply_markup")
-
-        for t in targets:
-            await coordinator.api.async_telegram_edit_message_reply_markup(
-                chat_id=t,
-                message_id=message_id,
-                reply_markup=reply_markup,
-                inline_keyboard=inline_keyboard,
-            )
-
-    async def handle_delete_message(call: ServiceCall) -> None:
-        """Handle delete_message service call."""
-        targets = _resolve_target(call)
-        message_id = call.data["message_id"]
-        for t in targets:
-            await coordinator.api.async_telegram_delete_message(
-                chat_id=t, message_id=message_id
-            )
-
-    async def handle_answer_callback_query(call: ServiceCall) -> None:
-        """Handle answer_callback_query service call."""
-        cb_id = call.data["callback_query_id"]
-        text = call.data.get("message") or call.data.get("text")
-        show_alert = call.data.get("show_alert", False)
-        url = call.data.get("url")
-        cache_time = call.data.get("cache_time")
-        await coordinator.api.async_telegram_answer_callback_query(
-            callback_query_id=cb_id,
-            text=text,
-            show_alert=show_alert,
-            url=url,
-            cache_time=cache_time,
+        return (
+            call.data.get(CONF_BOT)
+            or call.data.get(CONF_BOT_ID)
+            or data.get(CONF_BOT)
+            or data.get(CONF_BOT_ID)
+            or default_bot_id
         )
 
-    async def handle_leave_chat(call: ServiceCall) -> None:
-        """Handle leave_chat service call."""
-        targets = _resolve_target(call)
-        for t in targets:
-            await coordinator.api.async_telegram_leave_chat(chat_id=t)
+    if enable_telegram_proxy:
 
-    # Legacy / Bot Administration Services
+        async def handle_send_message(call: ServiceCall) -> None:
+            """Handle send_message (1:1 Telegram compatible)."""
+            targets = _resolve_target(call)
+            text = call.data.get("message") or call.data.get("text", "")
+            title = call.data.get("title")
+            if title:
+                text = f"<b>{title}</b>\n{text}"
+
+            data = call.data.get("data") or {}
+            parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
+            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_message(
+                    chat_id=t,
+                    text=text,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_photo(call: ServiceCall) -> None:
+            """Handle send_photo (1:1 Telegram compatible)."""
+            targets = _resolve_target(call)
+            file_path = call.data.get("file") or call.data.get("url") or call.data.get("photo")
+            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            data = call.data.get("data") or {}
+            parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
+            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_photo(
+                    chat_id=t,
+                    file=file_path,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_video(call: ServiceCall) -> None:
+            """Handle send_video (1:1 Telegram compatible)."""
+            targets = _resolve_target(call)
+            file_path = call.data.get("file") or call.data.get("video") or call.data.get("url")
+            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            data = call.data.get("data") or {}
+            parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
+            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_video(
+                    chat_id=t,
+                    file=file_path,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_document(call: ServiceCall) -> None:
+            """Handle send_document (1:1 Telegram compatible)."""
+            targets = _resolve_target(call)
+            file_path = call.data.get("file") or call.data.get("document") or call.data.get("url")
+            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            data = call.data.get("data") or {}
+            parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
+            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_document(
+                    chat_id=t,
+                    file=file_path,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_animation(call: ServiceCall) -> None:
+            """Handle send_animation (1:1 Telegram compatible)."""
+            targets = _resolve_target(call)
+            file_path = call.data.get("file") or call.data.get("animation") or call.data.get("url")
+            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            data = call.data.get("data") or {}
+            parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
+            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_animation(
+                    chat_id=t,
+                    file=file_path,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_voice(call: ServiceCall) -> None:
+            """Handle send_voice (1:1 Telegram compatible)."""
+            targets = _resolve_target(call)
+            file_path = call.data.get("file") or call.data.get("voice") or call.data.get("url")
+            caption = call.data.get("caption") or call.data.get("message") or call.data.get("text")
+            data = call.data.get("data") or {}
+            parse_mode = call.data.get("parse_mode") or data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard") or data.get("inline_keyboard")
+            keyboard = call.data.get("keyboard") or data.get("keyboard")
+            reply_markup = call.data.get("reply_markup") or data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", data.get("disable_notification", False))
+            reply_to_message_id = call.data.get("reply_to_message_id") or data.get("reply_to_message_id")
+            message_thread_id = call.data.get("message_thread_id") or data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_voice(
+                    chat_id=t,
+                    file=file_path,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    keyboard=keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_location(call: ServiceCall) -> None:
+            """Handle send_location (1:1 Telegram compatible)."""
+            targets = _resolve_target(call)
+            lat = call.data["latitude"]
+            lon = call.data["longitude"]
+            live_period = call.data.get("live_period")
+            inline_keyboard = call.data.get("inline_keyboard")
+            reply_markup = call.data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", False)
+            reply_to_message_id = call.data.get("reply_to_message_id")
+            message_thread_id = call.data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_location(
+                    chat_id=t,
+                    latitude=float(lat),
+                    longitude=float(lon),
+                    live_period=live_period,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_send_poll(call: ServiceCall) -> None:
+            """Handle send_poll (smart polls for meetings, votes, food, etc.)."""
+            targets = _resolve_target(call)
+            question = call.data["question"]
+            options = call.data["options"]
+            is_anonymous = call.data.get("is_anonymous", True)
+            poll_type = call.data.get("type", "regular")
+            allows_multiple_answers = call.data.get("allows_multiple_answers", False)
+            correct_option_id = call.data.get("correct_option_id")
+            explanation = call.data.get("explanation")
+            category = call.data.get("category", "general")
+            reply_markup = call.data.get("reply_markup")
+            disable_notification = call.data.get("disable_notification", False)
+            reply_to_message_id = call.data.get("reply_to_message_id")
+            message_thread_id = call.data.get("message_thread_id")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_send_poll(
+                    chat_id=t,
+                    question=question,
+                    options=options,
+                    is_anonymous=is_anonymous,
+                    poll_type=poll_type,
+                    allows_multiple_answers=allows_multiple_answers,
+                    correct_option_id=correct_option_id,
+                    explanation=explanation,
+                    category=category,
+                    reply_markup=reply_markup,
+                    disable_notification=disable_notification,
+                    reply_to_message_id=reply_to_message_id,
+                    message_thread_id=message_thread_id,
+                    bot_id=bot,
+                )
+
+        async def handle_stop_poll(call: ServiceCall) -> None:
+            """Handle stop_poll service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            reply_markup = call.data.get("reply_markup")
+            bot = _resolve_bot(call)
+            for t in targets:
+                await coordinator.api.async_telegram_stop_poll(
+                    chat_id=t, message_id=message_id, reply_markup=reply_markup, bot_id=bot
+                )
+
+        async def handle_edit_message(call: ServiceCall) -> None:
+            """Handle edit_message / edit_message_text service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            text = call.data.get("message") or call.data.get("text", "")
+            parse_mode = call.data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard")
+            reply_markup = call.data.get("reply_markup")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_edit_message_text(
+                    chat_id=t,
+                    message_id=message_id,
+                    text=text,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    bot_id=bot,
+                )
+
+        async def handle_edit_caption(call: ServiceCall) -> None:
+            """Handle edit_caption service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            caption = call.data["caption"]
+            parse_mode = call.data.get("parse_mode", "HTML")
+            inline_keyboard = call.data.get("inline_keyboard")
+            reply_markup = call.data.get("reply_markup")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_edit_message_caption(
+                    chat_id=t,
+                    message_id=message_id,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    bot_id=bot,
+                )
+
+        async def handle_edit_replymarkup(call: ServiceCall) -> None:
+            """Handle edit_replymarkup service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            inline_keyboard = call.data.get("inline_keyboard")
+            reply_markup = call.data.get("reply_markup")
+            bot = _resolve_bot(call)
+
+            for t in targets:
+                await coordinator.api.async_telegram_edit_message_reply_markup(
+                    chat_id=t,
+                    message_id=message_id,
+                    reply_markup=reply_markup,
+                    inline_keyboard=inline_keyboard,
+                    bot_id=bot,
+                )
+
+        async def handle_delete_message(call: ServiceCall) -> None:
+            """Handle delete_message service call."""
+            targets = _resolve_target(call)
+            message_id = call.data["message_id"]
+            bot = _resolve_bot(call)
+            for t in targets:
+                await coordinator.api.async_telegram_delete_message(
+                    chat_id=t, message_id=message_id, bot_id=bot
+                )
+
+        async def handle_answer_callback_query(call: ServiceCall) -> None:
+            """Handle answer_callback_query service call."""
+            cb_id = call.data["callback_query_id"]
+            text = call.data.get("message") or call.data.get("text")
+            show_alert = call.data.get("show_alert", False)
+            url = call.data.get("url")
+            cache_time = call.data.get("cache_time")
+            bot = _resolve_bot(call)
+            await coordinator.api.async_telegram_answer_callback_query(
+                callback_query_id=cb_id,
+                text=text,
+                show_alert=show_alert,
+                url=url,
+                cache_time=cache_time,
+                bot_id=bot,
+            )
+
+        async def handle_leave_chat(call: ServiceCall) -> None:
+            """Handle leave_chat service call."""
+            targets = _resolve_target(call)
+            bot = _resolve_bot(call)
+            for t in targets:
+                await coordinator.api.async_telegram_leave_chat(chat_id=t, bot_id=bot)
+
+        hass.services.async_register(DOMAIN, "send_message", handle_send_message)
+        hass.services.async_register(DOMAIN, "send_photo", handle_send_photo)
+        hass.services.async_register(DOMAIN, "send_video", handle_send_video)
+        hass.services.async_register(DOMAIN, "send_document", handle_send_document)
+        hass.services.async_register(DOMAIN, "send_animation", handle_send_animation)
+        hass.services.async_register(DOMAIN, "send_voice", handle_send_voice)
+        hass.services.async_register(DOMAIN, "send_location", handle_send_location)
+        hass.services.async_register(DOMAIN, "send_poll", handle_send_poll)
+        hass.services.async_register(DOMAIN, "stop_poll", handle_stop_poll)
+        hass.services.async_register(DOMAIN, "edit_message", handle_edit_message)
+        hass.services.async_register(DOMAIN, "edit_caption", handle_edit_caption)
+        hass.services.async_register(DOMAIN, "edit_replymarkup", handle_edit_replymarkup)
+        hass.services.async_register(DOMAIN, "delete_message", handle_delete_message)
+        hass.services.async_register(DOMAIN, "answer_callback_query", handle_answer_callback_query)
+        hass.services.async_register(DOMAIN, "leave_chat", handle_leave_chat)
+
+    # Legacy & Bot Administration Services
     async def handle_ban_user(call: ServiceCall) -> None:
         group_id = call.data["group_id"]
         user_id = call.data["user_id"]
@@ -541,24 +702,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await coordinator.api.async_sync_filters()
         await coordinator.async_request_refresh()
 
-    # Register all services
-    hass.services.async_register(DOMAIN, "send_message", handle_send_message)
-    hass.services.async_register(DOMAIN, "send_photo", handle_send_photo)
-    hass.services.async_register(DOMAIN, "send_video", handle_send_video)
-    hass.services.async_register(DOMAIN, "send_document", handle_send_document)
-    hass.services.async_register(DOMAIN, "send_animation", handle_send_animation)
-    hass.services.async_register(DOMAIN, "send_voice", handle_send_voice)
-    hass.services.async_register(DOMAIN, "send_location", handle_send_location)
-    hass.services.async_register(DOMAIN, "send_poll", handle_send_poll)
-    hass.services.async_register(DOMAIN, "stop_poll", handle_stop_poll)
-    hass.services.async_register(DOMAIN, "edit_message", handle_edit_message)
-    hass.services.async_register(DOMAIN, "edit_caption", handle_edit_caption)
-    hass.services.async_register(DOMAIN, "edit_replymarkup", handle_edit_replymarkup)
-    hass.services.async_register(DOMAIN, "delete_message", handle_delete_message)
-    hass.services.async_register(DOMAIN, "answer_callback_query", handle_answer_callback_query)
-    hass.services.async_register(DOMAIN, "leave_chat", handle_leave_chat)
-
-    # Legacy & admin services
+    # Register admin services
     hass.services.async_register(DOMAIN, "ban_user", handle_ban_user)
     hass.services.async_register(DOMAIN, "unban_user", handle_unban_user)
     hass.services.async_register(DOMAIN, "mute_user", handle_mute_user)
@@ -585,7 +729,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception:
         pass
 
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+    enable_telegram_proxy = entry.options.get(
+        CONF_ENABLE_TELEGRAM_PROXY,
+        entry.data.get(CONF_ENABLE_TELEGRAM_PROXY, True),
+    )
+    platforms = list(CORE_PLATFORMS)
+    if enable_telegram_proxy:
+        platforms.append(Platform.NOTIFY)
+
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, platforms):
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok

@@ -50,7 +50,16 @@ from .api import (
     AegisBotApiClientCommunicationError,
     AegisBotApiClientError,
 )
-from .const import CONF_ALLOWED_CHAT_IDS, CONF_API_KEY, DOMAIN, LOGGER
+from .const import (
+    CONF_ALLOWED_CHAT_IDS,
+    CONF_API_KEY,
+    CONF_AUTO_SYNC_COMMANDS,
+    CONF_DEFAULT_BOT_ID,
+    CONF_ENABLE_TELEGRAM_PROXY,
+    CONF_IGNORED_COMMANDS,
+    DOMAIN,
+    LOGGER,
+)
 
 DEFAULT_PORT = 8077
 ADDON_STABLE_SLUG = "edfe50eb_aegisbot"
@@ -412,6 +421,23 @@ class AegisBotOptionsFlowHandler(OptionsFlow):
         if isinstance(current_allowed, list):
             current_allowed = ", ".join(str(x) for x in current_allowed)
 
+        current_proxy = self.config_entry.options.get(
+            CONF_ENABLE_TELEGRAM_PROXY,
+            self.config_entry.data.get(CONF_ENABLE_TELEGRAM_PROXY, True),
+        )
+        current_sync = self.config_entry.options.get(
+            CONF_AUTO_SYNC_COMMANDS,
+            self.config_entry.data.get(CONF_AUTO_SYNC_COMMANDS, True),
+        )
+        current_default_bot = self.config_entry.options.get(
+            CONF_DEFAULT_BOT_ID,
+            self.config_entry.data.get(CONF_DEFAULT_BOT_ID, ""),
+        )
+        current_ignored_cmds = self.config_entry.options.get(
+            CONF_IGNORED_COMMANDS,
+            self.config_entry.data.get(CONF_IGNORED_COMMANDS, ""),
+        )
+
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
@@ -420,6 +446,22 @@ class AegisBotOptionsFlowHandler(OptionsFlow):
                         "scan_interval",
                         default=self.config_entry.options.get("scan_interval", 30),
                     ): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
+                    vol.Optional(
+                        CONF_ENABLE_TELEGRAM_PROXY,
+                        default=current_proxy,
+                    ): bool,
+                    vol.Optional(
+                        CONF_AUTO_SYNC_COMMANDS,
+                        default=current_sync,
+                    ): bool,
+                    vol.Optional(
+                        CONF_DEFAULT_BOT_ID,
+                        default=current_default_bot,
+                    ): str,
+                    vol.Optional(
+                        CONF_IGNORED_COMMANDS,
+                        default=current_ignored_cmds,
+                    ): str,
                     vol.Optional(
                         CONF_ALLOWED_CHAT_IDS,
                         default=current_allowed,

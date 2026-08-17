@@ -111,7 +111,13 @@ async def test_flow_zeroconf_discovery(hass, mock_api):
 async def test_options_flow(hass):
     """Test options flow for AegisBot."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
-    from custom_components.aegisbot.const import CONF_ALLOWED_CHAT_IDS
+    from custom_components.aegisbot.const import (
+        CONF_ALLOWED_CHAT_IDS,
+        CONF_AUTO_SYNC_COMMANDS,
+        CONF_DEFAULT_BOT_ID,
+        CONF_ENABLE_TELEGRAM_PROXY,
+        CONF_IGNORED_COMMANDS,
+    )
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -126,9 +132,21 @@ async def test_options_flow(hass):
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        user_input={"scan_interval": 60, CONF_ALLOWED_CHAT_IDS: "-100789, -100999"},
+        user_input={
+            "scan_interval": 60,
+            CONF_ENABLE_TELEGRAM_PROXY: True,
+            CONF_AUTO_SYNC_COMMANDS: True,
+            CONF_DEFAULT_BOT_ID: "MainBot",
+            CONF_IGNORED_COMMANDS: "secret_cmd, admin_only",
+            CONF_ALLOWED_CHAT_IDS: "-100789, -100999",
+        },
     )
     assert result2["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert result2["data"]["scan_interval"] == 60
+    assert result2["data"][CONF_ENABLE_TELEGRAM_PROXY] is True
+    assert result2["data"][CONF_AUTO_SYNC_COMMANDS] is True
+    assert result2["data"][CONF_DEFAULT_BOT_ID] == "MainBot"
+    assert result2["data"][CONF_IGNORED_COMMANDS] == "secret_cmd, admin_only"
     assert result2["data"][CONF_ALLOWED_CHAT_IDS] == "-100789, -100999"
+
 

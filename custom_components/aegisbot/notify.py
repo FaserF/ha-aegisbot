@@ -16,7 +16,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-from .const import CONF_ALLOWED_CHAT_IDS, DOMAIN
+from .const import CONF_ALLOWED_CHAT_IDS, CONF_DEFAULT_BOT_ID, DOMAIN
 from .coordinator import AegisBotDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,7 +37,12 @@ async def async_get_service(
         return None
 
     default_chat_ids = discovery_info.get(CONF_ALLOWED_CHAT_IDS, [])
-    return AegisBotNotificationService(coordinator, default_chat_ids)
+    default_bot_id = discovery_info.get(CONF_DEFAULT_BOT_ID)
+    return AegisBotNotificationService(
+        coordinator=coordinator,
+        default_chat_ids=default_chat_ids,
+        default_bot_id=default_bot_id,
+    )
 
 
 async def async_setup_entry(
@@ -57,11 +62,13 @@ class AegisBotNotificationService(BaseNotificationService):
         self,
         coordinator: AegisBotDataCoordinator,
         default_chat_ids: list[Any] | None = None,
+        default_bot_id: int | str | None = None,
     ) -> None:
         """Initialize the service."""
         self.coordinator = coordinator
         self.api = coordinator.api
         self.default_chat_ids = default_chat_ids or []
+        self.default_bot_id = default_bot_id
 
     async def async_send_message(
         self,
@@ -80,6 +87,9 @@ class AegisBotNotificationService(BaseNotificationService):
         title = kwargs.get(ATTR_TITLE)
         data = kwargs.get(ATTR_DATA) or {}
 
+        # Bot routing (specific bot selection or default bot fallback)
+        target_bot = data.get("bot") or data.get("bot_id") or self.default_bot_id
+
         # Merge title and message if title present
         full_text = f"<b>{title}</b>\n{message}" if title else message
 
@@ -94,7 +104,7 @@ class AegisBotNotificationService(BaseNotificationService):
         for target in targets:
             try:
                 # 1. Photo
-                if "photo" in data or "url" in data and any(data.get("url", "").endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]):
+                if "photo" in data or ("url" in data and any(data.get("url", "").endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"])):
                     photo_url = data.get("photo") or data.get("url")
                     caption = data.get("caption", full_text)
                     await self.api.async_telegram_send_photo(
@@ -108,6 +118,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         disable_notification=disable_notification,
                         reply_to_message_id=reply_to_message_id,
                         message_thread_id=message_thread_id,
+                        bot_id=target_bot,
                     )
                 # 2. Video
                 elif "video" in data:
@@ -122,6 +133,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         disable_notification=disable_notification,
                         reply_to_message_id=reply_to_message_id,
                         message_thread_id=message_thread_id,
+                        bot_id=target_bot,
                     )
                 # 3. Document / File
                 elif "document" in data or "file" in data:
@@ -137,6 +149,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         disable_notification=disable_notification,
                         reply_to_message_id=reply_to_message_id,
                         message_thread_id=message_thread_id,
+                        bot_id=target_bot,
                     )
                 # 4. Animation / GIF
                 elif "animation" in data:
@@ -151,6 +164,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         disable_notification=disable_notification,
                         reply_to_message_id=reply_to_message_id,
                         message_thread_id=message_thread_id,
+                        bot_id=target_bot,
                     )
                 # 5. Location
                 elif "location" in data or ("latitude" in data and "longitude" in data):
@@ -166,6 +180,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         disable_notification=disable_notification,
                         reply_to_message_id=reply_to_message_id,
                         message_thread_id=message_thread_id,
+                        bot_id=target_bot,
                     )
                 # 6. Poll
                 elif "poll" in data:
@@ -184,6 +199,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         disable_notification=disable_notification,
                         reply_to_message_id=reply_to_message_id,
                         message_thread_id=message_thread_id,
+                        bot_id=target_bot,
                     )
                 # 7. Standard Text Message
                 else:
@@ -197,6 +213,7 @@ class AegisBotNotificationService(BaseNotificationService):
                         disable_notification=disable_notification,
                         reply_to_message_id=reply_to_message_id,
                         message_thread_id=message_thread_id,
+                        bot_id=target_bot,
                     )
             except Exception as err:
                 _LOGGER.error("Failed to deliver AegisBot notification to %s: %s", target, err)

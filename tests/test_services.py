@@ -74,13 +74,13 @@ async def test_telegram_services_execution(hass):
     )
     coordinator.api.async_telegram_send_poll.assert_called_once()
 
-    # 4. Test delete_message
+    # 4. Test delete_message with bot parameter
     await hass.services.async_call(
         DOMAIN,
         "delete_message",
-        {"target": -100123, "message_id": 999},
+        {"target": -100123, "message_id": 999, "bot": "BotBeta"},
         blocking=True,
     )
     coordinator.api.async_telegram_delete_message.assert_called_once_with(
-        chat_id=-100123, message_id=999
+        chat_id=-100123, message_id=999, bot_id="BotBeta"
     )

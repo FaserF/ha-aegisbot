@@ -276,7 +276,7 @@ class AegisBotApiClient:
         )
 
     # ------------------------------------------------------------------
-    # Telegram Bot API Proxy Methods (1:1 with telegram_bot)
+    # Telegram Proxy API (1:1 telegram_bot parity + Modern Features)
     # ------------------------------------------------------------------
 
     async def async_telegram_send_message(
@@ -290,6 +290,7 @@ class AegisBotApiClient:
         disable_notification: bool = False,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send a text message via Telegram."""
         payload: dict[str, Any] = {
@@ -308,6 +309,8 @@ class AegisBotApiClient:
             payload["reply_to_message_id"] = reply_to_message_id
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -327,6 +330,7 @@ class AegisBotApiClient:
         disable_notification: bool = False,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send a photo via Telegram."""
         payload: dict[str, Any] = {
@@ -346,6 +350,8 @@ class AegisBotApiClient:
             payload["reply_to_message_id"] = reply_to_message_id
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -365,6 +371,7 @@ class AegisBotApiClient:
         disable_notification: bool = False,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send a video via Telegram."""
         payload: dict[str, Any] = {
@@ -384,6 +391,8 @@ class AegisBotApiClient:
             payload["reply_to_message_id"] = reply_to_message_id
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -403,6 +412,7 @@ class AegisBotApiClient:
         disable_notification: bool = False,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send a document/file via Telegram."""
         payload: dict[str, Any] = {
@@ -422,6 +432,8 @@ class AegisBotApiClient:
             payload["reply_to_message_id"] = reply_to_message_id
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -441,6 +453,7 @@ class AegisBotApiClient:
         disable_notification: bool = False,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send an animation (GIF) via Telegram."""
         payload: dict[str, Any] = {
@@ -460,6 +473,8 @@ class AegisBotApiClient:
             payload["reply_to_message_id"] = reply_to_message_id
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -479,6 +494,7 @@ class AegisBotApiClient:
         disable_notification: bool = False,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send a voice audio message via Telegram."""
         payload: dict[str, Any] = {
@@ -498,6 +514,8 @@ class AegisBotApiClient:
             payload["reply_to_message_id"] = reply_to_message_id
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -516,6 +534,7 @@ class AegisBotApiClient:
         disable_notification: bool = False,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send a location coordinate via Telegram."""
         payload: dict[str, Any] = {
@@ -534,6 +553,8 @@ class AegisBotApiClient:
             payload["reply_to_message_id"] = reply_to_message_id
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -559,6 +580,7 @@ class AegisBotApiClient:
         disable_notification: bool = False,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send a native Telegram Poll with smart tracking."""
         payload: dict[str, Any] = {
@@ -587,6 +609,8 @@ class AegisBotApiClient:
             payload["reply_to_message_id"] = reply_to_message_id
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -599,6 +623,7 @@ class AegisBotApiClient:
         chat_id: int | str,
         message_id: int,
         reply_markup: Any = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Stop an active Telegram poll and return final results."""
         payload: dict[str, Any] = {
@@ -607,6 +632,8 @@ class AegisBotApiClient:
         }
         if reply_markup is not None:
             payload["reply_markup"] = reply_markup
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -622,6 +649,7 @@ class AegisBotApiClient:
         parse_mode: str | None = "HTML",
         reply_markup: Any = None,
         inline_keyboard: Any = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Edit text of an existing message."""
         payload: dict[str, Any] = {
@@ -634,6 +662,8 @@ class AegisBotApiClient:
             payload["reply_markup"] = reply_markup
         if inline_keyboard is not None:
             payload["inline_keyboard"] = inline_keyboard
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -649,6 +679,7 @@ class AegisBotApiClient:
         parse_mode: str | None = "HTML",
         reply_markup: Any = None,
         inline_keyboard: Any = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Edit caption of an existing media message."""
         payload: dict[str, Any] = {
@@ -661,6 +692,8 @@ class AegisBotApiClient:
             payload["reply_markup"] = reply_markup
         if inline_keyboard is not None:
             payload["inline_keyboard"] = inline_keyboard
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -674,6 +707,7 @@ class AegisBotApiClient:
         message_id: int,
         reply_markup: Any = None,
         inline_keyboard: Any = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Edit inline keyboard markup of an existing message."""
         payload: dict[str, Any] = {
@@ -684,6 +718,8 @@ class AegisBotApiClient:
             payload["reply_markup"] = reply_markup
         if inline_keyboard is not None:
             payload["inline_keyboard"] = inline_keyboard
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -695,12 +731,15 @@ class AegisBotApiClient:
         self,
         chat_id: int | str,
         message_id: int,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Delete a message from a chat."""
         payload: dict[str, Any] = {
             "chat_id": chat_id,
             "message_id": message_id,
         }
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
         return await self._api_wrapper(
             method="post",
             url=f"{self._url}/api/v1/telegram/delete_message",
@@ -714,6 +753,7 @@ class AegisBotApiClient:
         show_alert: bool = False,
         url: str | None = None,
         cache_time: int | None = None,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Send an answer to a callback query."""
         payload: dict[str, Any] = {
@@ -726,6 +766,8 @@ class AegisBotApiClient:
             payload["url"] = url
         if cache_time is not None:
             payload["cache_time"] = cache_time
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
 
         return await self._api_wrapper(
             method="post",
@@ -736,20 +778,45 @@ class AegisBotApiClient:
     async def async_telegram_leave_chat(
         self,
         chat_id: int | str,
+        bot_id: int | str | None = None,
     ) -> dict[str, Any]:
         """Leave a group or channel."""
         payload: dict[str, Any] = {"chat_id": chat_id}
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
         return await self._api_wrapper(
             method="post",
             url=f"{self._url}/api/v1/telegram/leave_chat",
             data=payload,
         )
 
-    async def async_telegram_get_me(self) -> dict[str, Any]:
+    async def async_telegram_get_me(self, bot_id: int | str | None = None) -> dict[str, Any]:
         """Get Telegram bot profile details."""
+        params = f"?bot_id={bot_id}" if bot_id is not None else ""
         return await self._api_wrapper(
             method="get",
-            url=f"{self._url}/api/v1/telegram/get_me",
+            url=f"{self._url}/api/v1/telegram/get_me{params}",
+        )
+
+    async def async_get_telegram_bots(self) -> list[dict[str, Any]]:
+        """Get all configured Telegram bots from AegisBot."""
+        res = await self._api_wrapper(
+            method="get",
+            url=f"{self._url}/api/v1/telegram/bots",
+        )
+        return res.get("bots", [])
+
+    async def async_sync_commands(
+        self, commands: list[dict[str, str]], bot_id: int | str | None = None
+    ) -> dict[str, Any]:
+        """Sync commands to Telegram bot."""
+        payload: dict[str, Any] = {"commands": commands}
+        if bot_id is not None:
+            payload["bot_id"] = bot_id
+        return await self._api_wrapper(
+            method="post",
+            url=f"{self._url}/api/v1/telegram/sync_commands",
+            data=payload,
         )
 
     async def async_telegram_get_allowed_chats(self) -> list[Any]:

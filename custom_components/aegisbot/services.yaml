@@ -57,6 +57,12 @@ send_message:
       required: false
       selector:
         number:
+    bot:
+      description: Optional Bot ID or Username when multiple bots are active in AegisBot.
+      example: "SecurityBot"
+      required: false
+      selector:
+        text:
 
 send_photo:
   description: Send a photo to one or more Telegram chats.

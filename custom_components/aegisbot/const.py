@@ -11,6 +11,12 @@ CONF_API_KEY = "api_key"
 CONF_ALLOWED_CHAT_IDS = "allowed_chat_ids"
 CONF_WEBHOOK_ID = "webhook_id"
 CONF_CHAT_ID = "chat_id"
+CONF_ENABLE_TELEGRAM_PROXY = "enable_telegram_proxy"
+CONF_DEFAULT_BOT_ID = "default_bot_id"
+CONF_AUTO_SYNC_COMMANDS = "auto_sync_commands"
+CONF_IGNORED_COMMANDS = "ignored_commands"
+CONF_BOT = "bot"
+CONF_BOT_ID = "bot_id"
 
 DEFAULT_UPDATE_INTERVAL = 30
 
@@ -21,4 +27,3 @@ EVENT_AEGISBOT_CALLBACK = "aegisbot_callback"
 EVENT_AEGISBOT_POLL_ANSWER = "aegisbot_poll_answer"
 EVENT_AEGISBOT_POLL_UPDATE = "aegisbot_poll_update"
 EVENT_AEGISBOT_POLL_RESULT = "aegisbot_poll_result"
-
