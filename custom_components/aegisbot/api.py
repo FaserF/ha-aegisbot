@@ -13,7 +13,6 @@ except ImportError:
     from async_timeout import timeout as asyncio_timeout  # type: ignore[no-redef]
 
 
-
 class AegisBotApiClientError(Exception):
     """Exception to indicate a general API error."""
 
