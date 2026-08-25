@@ -334,6 +334,8 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
                     ADDON_EDGE_SLUG,
                 ]:
                     if slug == supported or slug.endswith(f"_{supported}"):
+                        await self.async_set_unique_id(slug)
+                        self._abort_if_unique_id_configured()
                         await self._async_prefill_addon_info(slug)
                         return await self.async_step_user()
 
