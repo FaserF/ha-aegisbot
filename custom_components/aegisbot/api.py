@@ -6,7 +6,12 @@ import socket
 from typing import Any
 
 import aiohttp
-import async_timeout
+
+try:
+    from asyncio import timeout as asyncio_timeout
+except ImportError:
+    from async_timeout import timeout as asyncio_timeout  # type: ignore[no-redef]
+
 
 
 class AegisBotApiClientError(Exception):
@@ -1565,7 +1570,8 @@ class AegisBotApiClient:
         headers["Authorization"] = f"Bearer {self._api_key}"
 
         try:
-            async with async_timeout.timeout(10):
+            # Use asyncio_timeout for modern Python / Home Assistant compatibility
+            async with asyncio_timeout(10):
                 response = await self._session.request(
                     method=method,
                     url=url,

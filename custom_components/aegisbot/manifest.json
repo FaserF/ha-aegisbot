@@ -15,9 +15,7 @@
   "loggers": [
     "aegisbot"
   ],
-  "requirements": [
-    "async_timeout==5.0.1"
-  ],
+  "requirements": [],
   "version": "1.0.2-dev0",
   "zeroconf": [
     {

@@ -21,6 +21,13 @@
       ],
       "matchCurrentVersion": "!/^0/",
       "automerge": true
+    },
+    {
+      "matchPackageNames": [
+        "async_timeout",
+        "async-timeout"
+      ],
+      "enabled": false
     }
   ],
   "github-actions": {
