@@ -167,20 +167,6 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the initial step."""
-        is_hassio_env = (
-            "hassio" in getattr(self.hass.config, "components", set())
-            and "hassio" in self.hass.data
-        )
-
-        if (
-            user_input is None
-            and is_hassio_env
-            and not self.context.get("hassio_checked")
-            and not self.discovery_info.get(CONF_URL)
-        ):
-            self.context["hassio_checked"] = True  # type: ignore[typeddict-unknown-key]
-            return await self.async_step_hassio()
-
         errors: dict[str, str] = {}
 
         suggested_url = (
