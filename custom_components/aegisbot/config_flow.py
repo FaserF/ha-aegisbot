@@ -221,6 +221,9 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
+                url = user_input[CONF_URL].rstrip("/")
+                await self.async_set_unique_id(url)
+                self._abort_if_unique_id_configured(updates=user_input)
                 return self.async_create_entry(title=info["title"], data=user_input)
 
         prefilled_key = self.discovery_info.get(CONF_API_KEY, "")
