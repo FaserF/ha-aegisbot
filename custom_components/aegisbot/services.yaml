@@ -954,14 +954,6 @@ answer_callback_query:
       selector:
         boolean:
 
-leave_chat:
-  description: Make the bot leave a group or channel.
-  fields:
-    target:
-      description: Chat ID to leave.
-      required: true
-      selector:
-        object:
 
 ban_user:
   description: Ban a user from a Telegram group.
