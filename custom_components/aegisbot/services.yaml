@@ -781,6 +781,7 @@ send_voice:
 
 send_location:
   description: Send geographic coordinates (location) to Telegram chats.
+  target:
   fields:
     target:
       description: Target chat ID(s).
@@ -793,6 +794,7 @@ send_location:
       required: true
       selector:
         number:
+          mode: box
           step: 0.000001
     longitude:
       description: Longitude coordinate.
@@ -800,6 +802,7 @@ send_location:
       required: true
       selector:
         number:
+          mode: box
           step: 0.000001
     live_period:
       description: Period in seconds for which location is live.
