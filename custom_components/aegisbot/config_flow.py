@@ -323,10 +323,25 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
                     ADDON_EDGE_SLUG,
                 ]:
                     if slug == supported or slug.endswith(f"_{supported}"):
+                        for entry in self._async_current_entries():
+                            entry_url = entry.data.get(CONF_URL, "")
+                            if (
+                                entry.unique_id in (slug, f"{slug}_8077")
+                                or "127.0.0.1" in entry_url
+                                or "localhost" in entry_url
+                                or slug in entry_url
+                                or slug.replace("_", "-") in entry_url
+                            ):
+                                if not entry.unique_id or entry.unique_id != slug:
+                                    self.hass.config_entries.async_update_entry(
+                                        entry, unique_id=slug
+                                    )
+                                return self.async_abort(reason="already_configured")
                         await self.async_set_unique_id(slug)
                         self._abort_if_unique_id_configured()
                         await self._async_prefill_addon_info(slug)
                         return await self.async_step_user()
+            return self.async_abort(reason="not_supported")
 
         try:
             from homeassistant.components.hassio import (
@@ -355,6 +370,34 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         """Confirm installation of the official addon."""
         errors: dict[str, str] = {}
         if user_input is not None:
+            if user_input.get("manual_setup"):
+                return await self.async_step_user()
+
+            # Ensure repository is available in Supervisor store
+            try:
+                from homeassistant.components.hassio import get_supervisor_client
+
+                client = get_supervisor_client(self.hass)
+                try:
+                    from aiohasupervisor.models.addons import StoreAddRepository
+
+                    repo_payload: Any = StoreAddRepository(
+                        repository="https://github.com/FaserF/hassio-addons"
+                    )
+                except ImportError:
+                    repo_payload = "https://github.com/FaserF/hassio-addons"
+
+                try:
+                    await client.store.add_repository(repo_payload)
+                except Exception as repo_err:  # noqa: BLE001
+                    LOGGER.debug(
+                        "Could not add addon repository %s: %s",
+                        "https://github.com/FaserF/hassio-addons",
+                        repo_err,
+                    )
+            except Exception:  # noqa: BLE001
+                pass
+
             slug = ADDON_STABLE_SLUG
             addon_manager = await self._async_get_addon_manager(slug)
             try:
@@ -366,6 +409,9 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
                 errors["base"] = "addon_install_error"
                 return self.async_show_form(
                     step_id="hassio_confirm",
+                    data_schema=vol.Schema(
+                        {vol.Optional("manual_setup", default=False): bool}
+                    ),
                     errors=errors,
                     description_placeholders={"addon": ADDON_NAME},
                 )
@@ -374,7 +420,7 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
 
         return self.async_show_form(
             step_id="hassio_confirm",
-            data_schema=vol.Schema({}),
+            data_schema=vol.Schema({vol.Optional("manual_setup", default=False): bool}),
             description_placeholders={"addon": ADDON_NAME},
         )
 

@@ -149,3 +149,120 @@ async def test_options_flow(hass):
     assert result2["data"][CONF_DEFAULT_BOT_ID] == "MainBot"
     assert result2["data"][CONF_IGNORED_COMMANDS] == "secret_cmd, admin_only"
     assert result2["data"][CONF_ALLOWED_CHAT_IDS] == "-100789, -100999"
+
+
+async def test_flow_hassio_confirm_manual(hass):
+    """Test hassio_confirm step with manual setup checked."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    mock_client = MagicMock()
+    mock_client.store.add_repository = AsyncMock()
+    with (
+        patch(
+            "homeassistant.components.hassio.get_supervisor_client",
+            return_value=mock_client,
+        ),
+        patch(
+            "custom_components.aegisbot.config_flow.AegisBotConfigFlow._async_get_addon_manager",
+            return_value=None,
+        ),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "hassio"}
+        )
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
+        assert result["step_id"] == "hassio_confirm"
+
+        confirm_result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"manual_setup": True},
+        )
+        assert confirm_result["type"] == data_entry_flow.FlowResultType.FORM
+        assert confirm_result["step_id"] == "user"
+
+
+async def test_flow_hassio_confirm_install_fail(hass):
+    """Test hassio_confirm step when installation fails."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    mock_client = MagicMock()
+    mock_client.store.add_repository = AsyncMock()
+
+    class MockAddonManager:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def async_install_addon(self):
+            raise Exception("App AegisBot does not exist in the store")
+
+        async def async_start_addon(self):
+            pass
+
+    with (
+        patch(
+            "homeassistant.components.hassio.get_supervisor_client",
+            return_value=mock_client,
+        ),
+        patch(
+            "custom_components.aegisbot.config_flow.AegisBotConfigFlow._async_get_addon_manager",
+            return_value=MockAddonManager(),
+        ),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "hassio"}
+        )
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
+        assert result["step_id"] == "hassio_confirm"
+
+        confirm_result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"manual_setup": False},
+        )
+        assert confirm_result["type"] == data_entry_flow.FlowResultType.FORM
+        assert confirm_result["step_id"] == "hassio_confirm"
+        assert confirm_result["errors"] == {"base": "addon_install_error"}
+
+
+async def test_flow_hassio_confirm_install_success(hass):
+    """Test hassio_confirm step with successful installation."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    mock_client = MagicMock()
+    mock_client.store.add_repository = AsyncMock()
+
+    class MockAddonManager:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def async_install_addon(self):
+            pass
+
+        async def async_start_addon(self):
+            pass
+
+    with (
+        patch(
+            "homeassistant.components.hassio.get_supervisor_client",
+            return_value=mock_client,
+        ),
+        patch(
+            "custom_components.aegisbot.config_flow.AegisBotConfigFlow._async_get_addon_manager",
+            return_value=MockAddonManager(),
+        ),
+        patch(
+            "custom_components.aegisbot.config_flow.AegisBotConfigFlow._async_prefill_addon_info"
+        ) as mock_prefill,
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "hassio"}
+        )
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
+        assert result["step_id"] == "hassio_confirm"
+
+        confirm_result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"manual_setup": False},
+        )
+        assert confirm_result["type"] == data_entry_flow.FlowResultType.FORM
+        assert confirm_result["step_id"] == "user"
+        mock_prefill.assert_called_once_with("edfe50eb_aegisbot")
