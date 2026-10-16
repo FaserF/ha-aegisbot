@@ -20,7 +20,10 @@
       },
       "hassio_confirm": {
         "title": "AegisBot-Addon installieren",
-        "description": "Möchten Sie das offizielle {addon}-Addon installieren und starten?"
+        "description": "Möchten Sie das offizielle {addon}-Addon installieren und starten?",
+        "data": {
+          "manual_setup": "Manuell / Standalone-URL konfigurieren"
+        }
       }
     },
     "error": {

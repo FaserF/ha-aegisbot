@@ -355,6 +355,34 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
         """Confirm installation of the official addon."""
         errors: dict[str, str] = {}
         if user_input is not None:
+            if user_input.get("manual_setup"):
+                return await self.async_step_user()
+
+            # Ensure repository is available in Supervisor store
+            try:
+                from homeassistant.components.hassio import get_supervisor_client
+
+                client = get_supervisor_client(self.hass)
+                try:
+                    from aiohasupervisor.models.addons import StoreAddRepository
+
+                    repo_payload: Any = StoreAddRepository(
+                        repository="https://github.com/FaserF/hassio-addons"
+                    )
+                except ImportError:
+                    repo_payload = "https://github.com/FaserF/hassio-addons"
+
+                try:
+                    await client.store.add_repository(repo_payload)
+                except Exception as repo_err:  # noqa: BLE001
+                    LOGGER.debug(
+                        "Could not add addon repository %s: %s",
+                        "https://github.com/FaserF/hassio-addons",
+                        repo_err,
+                    )
+            except Exception:  # noqa: BLE001
+                pass
+
             slug = ADDON_STABLE_SLUG
             addon_manager = await self._async_get_addon_manager(slug)
             try:
@@ -366,6 +394,9 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
                 errors["base"] = "addon_install_error"
                 return self.async_show_form(
                     step_id="hassio_confirm",
+                    data_schema=vol.Schema(
+                        {vol.Optional("manual_setup", default=False): bool}
+                    ),
                     errors=errors,
                     description_placeholders={"addon": ADDON_NAME},
                 )
@@ -374,7 +405,7 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
 
         return self.async_show_form(
             step_id="hassio_confirm",
-            data_schema=vol.Schema({}),
+            data_schema=vol.Schema({vol.Optional("manual_setup", default=False): bool}),
             description_placeholders={"addon": ADDON_NAME},
         )
 
