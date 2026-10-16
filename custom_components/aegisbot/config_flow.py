@@ -118,7 +118,7 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
                 AddonManager,  # type: ignore[attr-defined]
             )
 
-            return AddonManager(self.hass, LOGGER, slug, ADDON_NAME)
+            return AddonManager(self.hass, LOGGER, ADDON_NAME, slug)
         except (ImportError, AttributeError):
             return None
 
