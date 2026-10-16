@@ -132,8 +132,11 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
             host = slug.replace("_", "-")
             port = DEFAULT_PORT
 
-            if addon_info.network:
-                for internal, external in addon_info.network.items():
+            network = getattr(addon_info, "network", None) or (
+                addon_info.get("network") if isinstance(addon_info, dict) else None
+            )
+            if network:
+                for internal, external in network.items():
                     if internal.startswith(f"{DEFAULT_PORT}/"):
                         port = external
                         break

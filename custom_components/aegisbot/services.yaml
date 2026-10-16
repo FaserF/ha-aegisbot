@@ -795,7 +795,7 @@ send_location:
       selector:
         number:
           mode: box
-          step: 0.000001
+          step: any
     longitude:
       description: Longitude coordinate.
       example: 11.576124
@@ -803,7 +803,7 @@ send_location:
       selector:
         number:
           mode: box
-          step: 0.000001
+          step: any
     live_period:
       description: Period in seconds for which location is live.
       example: 3600
