@@ -323,10 +323,25 @@ class AegisBotConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore
                     ADDON_EDGE_SLUG,
                 ]:
                     if slug == supported or slug.endswith(f"_{supported}"):
+                        for entry in self._async_current_entries():
+                            entry_url = entry.data.get(CONF_URL, "")
+                            if (
+                                entry.unique_id in (slug, f"{slug}_8077")
+                                or "127.0.0.1" in entry_url
+                                or "localhost" in entry_url
+                                or slug in entry_url
+                                or slug.replace("_", "-") in entry_url
+                            ):
+                                if not entry.unique_id or entry.unique_id != slug:
+                                    self.hass.config_entries.async_update_entry(
+                                        entry, unique_id=slug
+                                    )
+                                return self.async_abort(reason="already_configured")
                         await self.async_set_unique_id(slug)
                         self._abort_if_unique_id_configured()
                         await self._async_prefill_addon_info(slug)
                         return await self.async_step_user()
+            return self.async_abort(reason="not_supported")
 
         try:
             from homeassistant.components.hassio import (
