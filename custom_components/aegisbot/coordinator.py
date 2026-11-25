@@ -8,11 +8,25 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import AegisBotApiClient, AegisBotApiClientError
 from .const import CONF_API_KEY, CONF_URL, DEFAULT_UPDATE_INTERVAL, DOMAIN, LOGGER
+
+
+def get_system_device_id(hass: HomeAssistant, entry: ConfigEntry) -> str:
+    """Return the device registry ID of the parent AegisBot hub device."""
+    dev_reg = dr.async_get(hass)
+    device = dev_reg.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="AegisBot System",
+        manufacturer="AegisBot",
+        entry_type=dr.DeviceEntryType.SERVICE,
+    )
+    return device.id
 
 
 class AegisBotDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):

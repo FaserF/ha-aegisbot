@@ -19,7 +19,7 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import AegisBotDataCoordinator
+from .coordinator import AegisBotDataCoordinator, get_system_device_id
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -97,7 +97,7 @@ class AegisBotGroupSensorEntity(
             name=f"Group: {group_title}",
             manufacturer="AegisBot",
             model="Telegram Group",
-            via_device=(DOMAIN, entry.entry_id),
+            via_device_id=get_system_device_id(coordinator.hass, entry),
         )
 
     @property

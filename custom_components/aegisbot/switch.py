@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import AegisBotDataCoordinator
+from .coordinator import AegisBotDataCoordinator, get_system_device_id
 
 LOCK_TYPES = [
     "media",
@@ -64,7 +64,7 @@ class AegisBotGroupLockSwitch(CoordinatorEntity[AegisBotDataCoordinator], Switch
             name=f"Group: {group_title}",
             manufacturer="AegisBot",
             model="Telegram Group",
-            via_device=(DOMAIN, entry.entry_id),
+            via_device_id=get_system_device_id(coordinator.hass, entry),
         )
 
         # Disable niche locks by default to keep HA UI clean
